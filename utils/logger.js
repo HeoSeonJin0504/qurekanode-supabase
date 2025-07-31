@@ -75,6 +75,3 @@ const enhancedLogger = {
 };
 
 module.exports = enhancedLogger;
-
-
-module.exports = enhancedLogger;
