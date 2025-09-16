@@ -68,14 +68,15 @@ app.get('/health', async (req, res) => {
             const { supabase } = require('./config/db');
             const { data, error } = await supabase
                 .from('users')
-                .select('name')
+                .select('name, userid')
                 .eq('userindex', 1)
                 .single();
                 
             if (!error && data) {
                 userData = {
                     userIndex: 1,
-                    name: data.name
+                    name: data.name,
+                    userid: data.userid
                 };
             }
         }
@@ -152,7 +153,7 @@ const server = app.listen(PORT, () => {
                     const { supabase } = require('./config/db');
                     const { data, error } = await supabase
                         .from('users')
-                        .select('name')
+                        .select('name, userid')
                         .eq('userindex', 1)
                         .single();
                     
@@ -161,7 +162,7 @@ const server = app.listen(PORT, () => {
                     if (error) {
                         logger.info(`데이터베이스 연결됨 [${currentTime}] - 사용자 정보 없음: ${error.message}`);
                     } else if (data) {
-                        logger.info(`데이터베이스 연결됨 [${currentTime}] - 사용자: ${data.name}`);
+                        logger.info(`데이터베이스 연결됨 [${currentTime}] - 사용자: ${data.name} (ID: ${data.userid})`);
                     } else {
                         logger.info(`데이터베이스 연결됨 [${currentTime}] - 사용자 ID 1 없음`);
                     }

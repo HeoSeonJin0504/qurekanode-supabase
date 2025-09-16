@@ -20,7 +20,7 @@ class Question {
       const dbQuestionType = mapQuestionTypeToDb(questionType);
       
       // 문제 데이터를 JSON으로 저장 (향후 확장성)
-      const questionData = {
+      const questionDataForDb = {
         question_text: questionText,
         // 추가 필드는 여기에 추가
       };
@@ -32,7 +32,7 @@ class Question {
           user_id: userId,
           file_name: fileName,
           question_type: dbQuestionType,
-          question_data: questionData
+          question_data: questionDataForDb
         })
         .select()
         .single();
