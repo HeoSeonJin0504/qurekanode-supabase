@@ -131,8 +131,8 @@ const summaryController = {
         });
       }
 
-      // 소유자 확인
-      if (summary.userId !== userId) {
+      // 소유자 확인 - user_id 속성명 사용 (데이터베이스 컬럼명과 일치)
+      if (summary.user_id !== userId) {
         logger.warn(`요약 삭제 권한 없음 - 사용자 ID: ${userId}, 요약 ID: ${id}`);
         return res.status(403).json({
           success: false,
