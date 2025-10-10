@@ -1,5 +1,37 @@
 const { supabase } = require('../config/db');
-const { formatDate, mapQuestionTypeToClient, mapQuestionTypeToDb } = require('../utils/formatUtil');
+const { formatDate } = require('../utils/formatUtil');
+
+/**
+ * 클라이언트 문제 타입을 DB 타입으로 변환
+ */
+function mapQuestionTypeToDb(clientType) {
+  const mapping = {
+    'n지 선다형': 'multiple_choice',
+    '순서 배열형': 'sequence',
+    '빈칸 채우기형': 'fill_in_the_blank',
+    '참거짓형': 'true_false',
+    '단답형': 'short_answer',
+    '서술형': 'descriptive'
+  };
+  
+  return mapping[clientType] || clientType;
+}
+
+/**
+ * DB 문제 타입을 클라이언트 타입으로 변환
+ */
+function mapQuestionTypeToClient(dbType) {
+  const mapping = {
+    'multiple_choice': 'n지 선다형',
+    'sequence': '순서 배열형',
+    'fill_in_the_blank': '빈칸 채우기형',
+    'true_false': '참거짓형',
+    'short_answer': '단답형',
+    'descriptive': '서술형'
+  };
+  
+  return mapping[dbType] || dbType;
+}
 
 class Question {
   /**

@@ -1,5 +1,35 @@
 const { supabase } = require('../config/db');
-const { formatDate, mapSummaryTypeToClient, mapSummaryTypeToDb } = require('../utils/formatUtil');
+const { formatDate } = require('../utils/formatUtil');
+
+/**
+ * 클라이언트 요약 타입을 DB 타입으로 변환
+ */
+function mapSummaryTypeToDb(clientType) {
+  const mapping = {
+    '기본 요약': 'basic',
+    '핵심 요약': 'key_points',
+    '주제 요약': 'topic',
+    '목차 요약': 'outline',
+    '키워드 요약': 'keywords'
+  };
+  
+  return mapping[clientType] || clientType;
+}
+
+/**
+ * DB 요약 타입을 클라이언트 타입으로 변환
+ */
+function mapSummaryTypeToClient(dbType) {
+  const mapping = {
+    'basic': '기본 요약',
+    'key_points': '핵심 요약',
+    'topic': '주제 요약',
+    'outline': '목차 요약',
+    'keywords': '키워드 요약'
+  };
+  
+  return mapping[dbType] || dbType;
+}
 
 class Summary {
   /**
