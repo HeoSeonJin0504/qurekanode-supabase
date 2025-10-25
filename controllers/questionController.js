@@ -9,7 +9,7 @@ const questionController = {
    */
   async saveQuestion(req, res) {
     try {
-      const { userId, fileName, questionType, questionText } = req.body;
+      const { userId, fileName, questionName, questionType, questionText } = req.body;
 
       // 필수 입력값 검증
       if (!userId || !fileName || !questionType || !questionText) {
@@ -28,11 +28,12 @@ const questionController = {
         });
       }
 
-      logger.debug('문제 저장 시도:', { fileName, questionType });
+      logger.debug('문제 저장 시도:', { fileName, questionName, questionType });
 
       const questionData = {
         userId,
         fileName,
+        questionName: questionName || 'Untitled Question',
         questionType,
         questionText
       };

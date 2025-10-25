@@ -39,7 +39,7 @@ class Summary {
    */
   static async create(summaryData) {
     try {
-      const { userId, fileName, summaryType, summaryText } = summaryData;
+      const { userId, fileName, summaryName, summaryType, summaryText } = summaryData;
       
       // 필수 필드 검증
       if (!userId || !fileName || !summaryType || !summaryText) {
@@ -55,6 +55,7 @@ class Summary {
         .insert({
           user_id: userId,
           file_name: fileName,
+          summary_name: summaryName || 'Untitled Summary',
           summary_type: dbSummaryType,
           summary_text: summaryText
         })
@@ -68,6 +69,7 @@ class Summary {
         selection_id: data.selection_id,
         user_id: data.user_id,
         file_name: data.file_name,
+        summary_name: data.summary_name,
         summary_type: mapSummaryTypeToClient(data.summary_type),
         created_at: data.created_at,
         formatted_date: formatDate(data.created_at)

@@ -41,7 +41,7 @@ class Question {
    */
   static async create(questionData) {
     try {
-      const { userId, fileName, questionType, questionText } = questionData;
+      const { userId, fileName, questionName, questionType, questionText } = questionData;
       
       // 필수 필드 검증
       if (!userId || !fileName || !questionType || !questionText) {
@@ -63,6 +63,7 @@ class Question {
         .insert({
           user_id: userId,
           file_name: fileName,
+          question_name: questionName || 'Untitled Question',
           question_type: dbQuestionType,
           question_data: questionDataForDb
         })
@@ -76,6 +77,7 @@ class Question {
         selection_id: data.selection_id,
         user_id: data.user_id,
         file_name: data.file_name,
+        question_name: data.question_name,
         question_type: mapQuestionTypeToClient(data.question_type),
         created_at: data.created_at,
         formatted_date: formatDate(data.created_at)

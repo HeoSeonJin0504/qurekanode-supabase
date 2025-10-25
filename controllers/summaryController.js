@@ -9,7 +9,7 @@ const summaryController = {
    */
   async saveSummary(req, res) {
     try {
-      const { userId, fileName, summaryType, summaryText } = req.body;
+      const { userId, fileName, summaryName, summaryType, summaryText } = req.body;
 
       // 필수 입력값 검증
       if (!userId || !fileName || !summaryType || !summaryText) {
@@ -28,12 +28,13 @@ const summaryController = {
         });
       }
 
-      logger.debug('요약 저장 시도:', { fileName, summaryType });
+      logger.debug('요약 저장 시도:', { fileName, summaryName, summaryType });
 
       // 요약 정보 저장
       const summaryData = {
         userId,
         fileName,
+        summaryName: summaryName || 'Untitled Summary',
         summaryType,
         summaryText,
       };
