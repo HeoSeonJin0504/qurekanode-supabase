@@ -95,14 +95,18 @@ const userController = {
     } catch (error) {
       logger.error('회원가입 오류:', error);
       
-      // 중복 키 오류 처리
-      if (error.code === 'ER_DUP_ENTRY') {
+      // Supabase(PostgreSQL) 중복 키 오류 처리 (에러 코드: 23505)
+      if (error.code === '23505' || error.code === 'ER_DUP_ENTRY') {
         let message = '이미 등록된 정보입니다.';
-        if (error.sqlMessage.includes('phone')) {
+        
+        // PostgreSQL 에러 메시지 또는 MySQL 에러 메시지에서 필드명 확인
+        const errorMessage = error.message || error.sqlMessage || '';
+        
+        if (errorMessage.includes('phone') || errorMessage.includes('전화번호')) {
           message = '이미 등록된 전화번호입니다.';
-        } else if (error.sqlMessage.includes('email')) {
+        } else if (errorMessage.includes('email') || errorMessage.includes('이메일')) {
           message = '이미 등록된 이메일입니다.';
-        } else if (error.sqlMessage.includes('userid')) {
+        } else if (errorMessage.includes('userid') || errorMessage.includes('아이디')) {
           message = '이미 등록된 아이디입니다.';
         }
         
