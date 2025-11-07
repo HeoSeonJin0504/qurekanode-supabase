@@ -181,6 +181,38 @@ class Summary {
   }
   
   /**
+   * 요약 이름 변경
+   * @param {number} selectionId - 요약 ID
+   * @param {string} newName - 새로운 이름
+   * @returns {Object} 업데이트된 요약 정보
+   */
+  static async updateName(selectionId, newName) {
+    try {
+      if (!newName || newName.trim() === '') {
+        throw new Error('요약 이름은 비어있을 수 없습니다.');
+      }
+
+      const { data, error } = await supabase
+        .from('user_summaries')
+        .update({ summary_name: newName.trim() })
+        .eq('selection_id', selectionId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return {
+        ...data,
+        summary_type: mapSummaryTypeToClient(data.summary_type),
+        formatted_date: formatDate(data.created_at)
+      };
+    } catch (error) {
+      console.error('요약 이름 변경 오류:', error.message);
+      throw error;
+    }
+  }
+  
+  /**
    * ID로 요약 정보 삭제
    * @param {number} selectionId - 삭제할 요약 ID
    * @returns {boolean} 삭제 성공 여부

@@ -12,6 +12,9 @@ router.get('/user/:userId', summaryController.getUserSummaries);
 // 요약 상세 조회
 router.get('/:id', summaryController.getSummaryDetail);
 
+// 요약 이름 변경 (인증 필요)
+router.patch('/:id/name', verifyToken, summaryController.updateSummaryName);
+
 // 요약 삭제 (인증 필요)
 router.delete('/:id', verifyToken, summaryController.deleteSummary);
 

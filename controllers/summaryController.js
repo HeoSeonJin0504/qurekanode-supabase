@@ -115,6 +115,61 @@ const summaryController = {
   },
 
   /**
+   * 요약 이름 변경
+   */
+  async updateSummaryName(req, res) {
+    try {
+      const { id } = req.params;
+      const { summaryName } = req.body;
+      const userId = req.user.id;
+
+      // 필수 입력값 검증
+      if (!summaryName || summaryName.trim() === '') {
+        return res.status(400).json({
+          success: false,
+          message: '요약 이름을 입력해주세요.',
+        });
+      }
+
+      // 요약 정보 조회
+      const summary = await Summary.findById(id);
+
+      if (!summary) {
+        return res.status(404).json({
+          success: false,
+          message: '요약을 찾을 수 없습니다.',
+        });
+      }
+
+      // 소유자 확인
+      if (summary.user_id !== userId) {
+        logger.warn(`요약 수정 권한 없음 - 사용자 ID: ${userId}, 요약 ID: ${id}`);
+        return res.status(403).json({
+          success: false,
+          message: '해당 요약을 수정할 권한이 없습니다.',
+        });
+      }
+
+      // 이름 변경
+      const updatedSummary = await Summary.updateName(id, summaryName);
+
+      logger.info(`요약 이름 변경 완료 - 요약 ID: ${id}, 새 이름: ${summaryName}`);
+      return res.status(200).json({
+        success: true,
+        message: '요약 이름이 성공적으로 변경되었습니다.',
+        summary: updatedSummary,
+      });
+    } catch (error) {
+      logger.error('요약 이름 변경 오류:', error);
+      return res.status(500).json({
+        success: false,
+        message: '서버 오류가 발생했습니다.',
+        error: error.message,
+      });
+    }
+  },
+
+  /**
    * 요약 삭제
    */
   async deleteSummary(req, res) {

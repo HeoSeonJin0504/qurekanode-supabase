@@ -192,6 +192,39 @@ class Question {
   }
 
   /**
+   * 문제 이름 변경
+   * @param {number} selectionId - 문제 ID
+   * @param {string} newName - 새로운 이름
+   * @returns {Object} 업데이트된 문제 정보
+   */
+  static async updateName(selectionId, newName) {
+    try {
+      if (!newName || newName.trim() === '') {
+        throw new Error('문제 이름은 비어있을 수 없습니다.');
+      }
+
+      const { data, error } = await supabase
+        .from('user_questions')
+        .update({ question_name: newName.trim() })
+        .eq('selection_id', selectionId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return {
+        ...data,
+        question_type: mapQuestionTypeToClient(data.question_type),
+        formatted_date: formatDate(data.created_at),
+        question_text: data.question_data.question_text
+      };
+    } catch (error) {
+      console.error('문제 이름 변경 오류:', error.message);
+      throw error;
+    }
+  }
+
+  /**
    * 모든 문제 목록 조회
    * @returns {Array} 모든 문제 목록
    */

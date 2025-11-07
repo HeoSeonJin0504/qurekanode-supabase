@@ -12,6 +12,9 @@ router.get('/user/:userId', questionController.getUserQuestions);
 // 문제 상세 조회
 router.get('/:id', questionController.getQuestionDetail);
 
+// 문제 이름 변경 (인증 필요)
+router.patch('/:id/name', verifyToken, questionController.updateQuestionName);
+
 // 문제 삭제 (인증 필요)
 router.delete('/:id', verifyToken, questionController.deleteQuestion);
 

@@ -115,6 +115,61 @@ const questionController = {
   },
 
   /**
+   * 문제 이름 변경
+   */
+  async updateQuestionName(req, res) {
+    try {
+      const { id } = req.params;
+      const { questionName } = req.body;
+      const userId = req.user.id;
+
+      // 필수 입력값 검증
+      if (!questionName || questionName.trim() === '') {
+        return res.status(400).json({
+          success: false,
+          message: '문제 이름을 입력해주세요.',
+        });
+      }
+
+      // 문제 정보 조회
+      const question = await Question.findById(id);
+
+      if (!question) {
+        return res.status(404).json({
+          success: false,
+          message: '문제를 찾을 수 없습니다.',
+        });
+      }
+
+      // 소유자 확인
+      if (question.user_id !== userId) {
+        logger.warn(`문제 수정 권한 없음 - 사용자 ID: ${userId}, 문제 ID: ${id}`);
+        return res.status(403).json({
+          success: false,
+          message: '해당 문제를 수정할 권한이 없습니다.',
+        });
+      }
+
+      // 이름 변경
+      const updatedQuestion = await Question.updateName(id, questionName);
+
+      logger.info(`문제 이름 변경 완료 - 문제 ID: ${id}, 새 이름: ${questionName}`);
+      return res.status(200).json({
+        success: true,
+        message: '문제 이름이 성공적으로 변경되었습니다.',
+        question: updatedQuestion,
+      });
+    } catch (error) {
+      logger.error('문제 이름 변경 오류:', error);
+      return res.status(500).json({
+        success: false,
+        message: '서버 오류가 발생했습니다.',
+        error: error.message,
+      });
+    }
+  },
+
+  /**
    * 문제 삭제
    */
   async deleteQuestion(req, res) {
