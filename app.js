@@ -35,7 +35,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'ngrok-skip-browser-warning']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-retry', 'ngrok-skip-browser-warning']
 };
 
 // CORS 미들웨어 적용
@@ -103,6 +103,7 @@ const authRoutes = require('./routes/authRoutes');
 const summaryRoutes = require('./routes/summaryRoutes');
 const questionRoutes = require('./routes/questionRoutes');
 const problemSummaryMetaRoutes = require('./routes/problemSummaryMeta');
+const favoriteRoutes = require('./routes/favoriteRoutes');
 
 // API 라우트 (중복 제거하고 통합)
 const apiRoutes = [
@@ -110,7 +111,8 @@ const apiRoutes = [
   { path: '/auth', router: authRoutes },
   { path: '/summaries', router: summaryRoutes },
   { path: '/questions', router: questionRoutes },
-  { path: '/problem-summary-meta', router: problemSummaryMetaRoutes }
+  { path: '/problem-summary-meta', router: problemSummaryMetaRoutes },
+  { path: '/favorites', router: favoriteRoutes }
 ];
 
 // API 라우트 등록 (API 접두사 있는 버전과 없는 버전 모두 지원)
