@@ -1,4 +1,5 @@
 const User = require('../models/userModel');
+const Favorite = require('../models/favoriteModel');
 const { 
   generateAccessToken, 
   generateRefreshToken, 
@@ -81,6 +82,15 @@ const userController = {
         phone, 
         email 
       });
+      
+      // 회원가입 성공 후 기본 폴더 생성
+      try {
+        await Favorite.createDefaultFolder(newUser.userindex);
+        logger.info(`기본 폴더 생성 완료 - 사용자 ID: ${newUser.userindex}`);
+      } catch (folderError) {
+        // 기본 폴더 생성 실패는 로그만 남기고 회원가입은 성공 처리
+        logger.error('기본 폴더 생성 실패:', folderError);
+      }
       
       return res.status(201).json({
         success: true,

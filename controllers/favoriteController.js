@@ -18,7 +18,21 @@ const favoriteController = {
         });
       }
       
-      const folders = await Favorite.getFoldersByUserId(userId);
+      let folders = await Favorite.getFoldersByUserId(userId);
+      
+      // 폴더가 하나도 없거나 기본 폴더가 없으면 기본 폴더 생성
+      const hasDefaultFolder = folders.some(folder => folder.folder_name === '기본 폴더');
+      
+      if (folders.length === 0 || !hasDefaultFolder) {
+        try {
+          await Favorite.getOrCreateDefaultFolder(userId);
+          // 폴더 목록 다시 조회
+          folders = await Favorite.getFoldersByUserId(userId);
+          logger.info(`기본 폴더 자동 생성 - 사용자 ID: ${userId}`);
+        } catch (createError) {
+          logger.error('기본 폴더 자동 생성 실패:', createError);
+        }
+      }
       
       return res.status(200).json({
         success: true,
