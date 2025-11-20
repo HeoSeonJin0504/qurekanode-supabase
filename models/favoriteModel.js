@@ -341,6 +341,59 @@ class Favorite {
   }
   
   /**
+   * 여러 문제가 즐겨찾기에 있는지 한 번에 확인
+   * @param {number} userId - 사용자 ID
+   * @param {Array} questions - 확인할 문제 목록 [{ questionId, questionIndex }]
+   * @returns {Array} 각 문제의 즐겨찾기 상태
+   */
+  static async checkMultipleQuestions(userId, questions) {
+    try {
+      if (!questions || questions.length === 0) {
+        return [];
+      }
+      
+      // 모든 문제 ID 추출
+      const questionIds = questions.map(q => q.questionId);
+      
+      // 한 번의 쿼리로 모든 즐겨찾기 조회
+      const { data, error } = await supabase
+        .from('favorite_questions')
+        .select('question_id, question_index, favorite_id, folder_id')
+        .eq('user_id', userId)
+        .in('question_id', questionIds);
+      
+      if (error) throw error;
+      
+      // 결과를 Map으로 변환하여 빠른 조회
+      const favoriteMap = new Map();
+      if (data) {
+        data.forEach(fav => {
+          const key = `${fav.question_id}_${fav.question_index}`;
+          favoriteMap.set(key, fav);
+        });
+      }
+      
+      // 각 문제에 대한 상태 반환
+      return questions.map(q => {
+        const questionIndex = q.questionIndex !== undefined ? q.questionIndex : 0;
+        const key = `${q.questionId}_${questionIndex}`;
+        const favorite = favoriteMap.get(key);
+        
+        return {
+          questionId: q.questionId,
+          questionIndex: questionIndex,
+          isFavorite: !!favorite,
+          favoriteId: favorite?.favorite_id || null,
+          folderId: favorite?.folder_id || null
+        };
+      });
+    } catch (error) {
+      console.error('대량 즐겨찾기 확인 오류:', error.message);
+      throw error;
+    }
+  }
+  
+  /**
    * 사용자의 모든 즐겨찾기 문제 조회
    * @param {number} userId - 사용자 ID
    * @returns {Array} 즐겨찾기 문제 목록

@@ -25,6 +25,9 @@ router.post('/questions', favoriteController.addQuestion);
 // 즐겨찾기에서 문제 제거
 router.delete('/questions/:favoriteId', favoriteController.removeQuestion);
 
+// 여러 문제의 즐겨찾기 상태 한 번에 확인 (최적화)
+router.post('/check-multiple/:userId', favoriteController.checkMultipleQuestions);
+
 // 특정 문제가 즐겨찾기에 있는지 확인
 router.get('/check/:userId/:questionId', favoriteController.checkQuestion);
 
