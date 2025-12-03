@@ -16,6 +16,8 @@ const {
   isValidEmail,
   isValidAge,
   isValidGender,
+  isSafeUserid,
+  isSafePassword,
   isSafeSqlInput
 } = require('../utils/validation');
 
@@ -74,8 +76,23 @@ const userController = {
       }
       
       // SQL Injection 방어: 입력값 안전성 검사
-      if (!isSafeSqlInput(userid) || !isSafeSqlInput(name) || 
-          !isSafeSqlInput(phone) || (email && !isSafeSqlInput(email))) {
+      if (!isSafeUserid(userid)) {
+        logger.warn(`SQL Injection 시도 감지 (아이디) - IP: ${req.ip}, userid: ${userid}`);
+        return res.status(400).json({
+          success: false,
+          message: '아이디에 허용되지 않는 문자가 포함되어 있습니다.'
+        });
+      }
+      
+      if (!isSafePassword(password)) {
+        logger.warn(`SQL Injection 시도 감지 (비밀번호) - IP: ${req.ip}`);
+        return res.status(400).json({
+          success: false,
+          message: '비밀번호에 허용되지 않는 패턴이 포함되어 있습니다.'
+        });
+      }
+      
+      if (!isSafeSqlInput(name) || !isSafeSqlInput(phone) || (email && !isSafeSqlInput(email))) {
         logger.warn(`SQL Injection 시도 감지 - IP: ${req.ip}`);
         return res.status(400).json({
           success: false,
@@ -87,14 +104,14 @@ const userController = {
       if (!isValidUserid(userid)) {
         return res.status(400).json({
           success: false,
-          message: '아이디는 4-20자의 영문, 숫자, 언더스코어만 사용 가능합니다.'
+          message: '아이디는 5-20자의 영문 소문자, 숫자, -, _만 사용 가능합니다.'
         });
       }
       
       if (!isValidPassword(password)) {
         return res.status(400).json({
           success: false,
-          message: '비밀번호는 8자 이상이며, 영문과 숫자를 포함해야 합니다.'
+          message: '비밀번호는 8-16자이며, 영문/숫자/특수문자 중 2가지 이상을 조합해야 합니다.'
         });
       }
       
@@ -236,7 +253,7 @@ const userController = {
       }
       
       // SQL Injection 방어
-      if (!isSafeSqlInput(userid)) {
+      if (!isSafeUserid(userid)) {
         logger.warn(`로그인 SQL Injection 시도 감지 - IP: ${req.ip}`);
         return res.status(400).json({
           success: false,

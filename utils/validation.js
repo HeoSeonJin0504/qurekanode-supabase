@@ -14,10 +14,10 @@ const isSafeSqlInput = (value) => {
   const sqlPatterns = [
     // SQL 키워드 (단어 경계 제거)
     /(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|UNION|DECLARE|SCRIPT|IFRAME)/i,
-    // 특수 문자 및 SQL 주석
-    /(;|\-\-|\/\*|\*\/|xp_|sp_)/,
+    // SQL 주석 및 위험 패턴 (특수문자는 비밀번호에서 허용되므로 주석 패턴만)
+    /(\-\-|\/\*|\*\/|xp_|sp_)/,
     // SQL 조건문 패턴
-    /(\bOR\b.*=|1\s*=\s*1|'\s*=\s*'|"\s*=\s*")/i,
+    /(\bOR\b.*=|1\s*=\s*1)/i,
     // HTML/Script 태그
     /(<script|<iframe|javascript:|onerror=|onload=)/i
   ];
@@ -26,31 +26,84 @@ const isSafeSqlInput = (value) => {
 };
 
 /**
- * 아이디 형식 검증 (영문, 숫자, 언더스코어만 허용)
+ * 아이디 전용 SQL Injection 검증 (더 엄격)
+ * @param {string} userid - 검증할 아이디
+ * @returns {boolean} 안전 여부
+ */
+const isSafeUserid = (userid) => {
+  if (typeof userid !== 'string') return false;
+  
+  // 아이디는 SQL 키워드 및 주석 패턴 차단
+  const dangerousPatterns = [
+    /(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|UNION|DECLARE)/i,
+    /(\-\-|\/\*|\*\/)/,  // SQL 주석
+    /(\bOR\b|\bAND\b)/i  // 조건문
+  ];
+  
+  return !dangerousPatterns.some(pattern => pattern.test(userid));
+};
+
+/**
+ * 비밀번호 전용 안전성 검증 (덜 엄격)
+ * @param {string} password - 검증할 비밀번호
+ * @returns {boolean} 안전 여부
+ */
+const isSafePassword = (password) => {
+  if (typeof password !== 'string') return false;
+  
+  // 비밀번호는 특수문자 허용하되, SQL 키워드와 스크립트만 차단
+  const dangerousPatterns = [
+    /(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|UNION|DECLARE)/i,
+    /(<script|<iframe|javascript:|onerror=|onload=)/i
+  ];
+  
+  return !dangerousPatterns.some(pattern => pattern.test(password));
+};
+
+/**
+ * 아이디 형식 검증 (영문 소문자, 숫자, -, _ 만 허용)
  * @param {string} userid - 검증할 아이디
  * @returns {boolean} 유효성
  */
 const isValidUserid = (userid) => {
   if (!userid || typeof userid !== 'string') return false;
   
-  // 4-20자, 영문+숫자+언더스코어만
-  const useridPattern = /^[a-zA-Z0-9_]{4,20}$/;
+  // 5-20자, 영문 소문자+숫자+하이픈+언더스코어만
+  const useridPattern = /^[a-z0-9_-]{5,20}$/;
   return useridPattern.test(userid);
 };
 
 /**
  * 비밀번호 형식 검증
+ * 8-16자, 영문 대소문자 + 숫자 + 특수문자 조합 권장
  * @param {string} password - 검증할 비밀번호
  * @returns {boolean} 유효성
  */
 const isValidPassword = (password) => {
   if (!password || typeof password !== 'string') return false;
   
-  // 8-50자, 최소 1개의 영문+숫자 포함
-  return password.length >= 8 && 
-         password.length <= 50 &&
-         /[a-zA-Z]/.test(password) &&
-         /[0-9]/.test(password);
+  // 길이 제한: 8-16자
+  if (password.length < 8 || password.length > 16) {
+    return false;
+  }
+  
+  // 허용된 특수문자: ! " # $ % & ' ( ) * + , - . / : ; ? @ [ \ ] ^ _ ` { | } ~
+  const allowedSpecialChars = /^[a-zA-Z0-9!"#$%&'()*+,\-.\/:;?@\[\\\]^_`{|}~]+$/;
+  if (!allowedSpecialChars.test(password)) {
+    return false;
+  }
+  
+  // 영문 포함 여부
+  const hasLetter = /[a-zA-Z]/.test(password);
+  // 숫자 포함 여부
+  const hasNumber = /[0-9]/.test(password);
+  // 특수문자 포함 여부
+  const hasSpecial = /[!"#$%&'()*+,\-.\/:;?@\[\\\]^_`{|}~]/.test(password);
+  
+  // 영문 + 숫자 + 특수문자 중 최소 2가지 이상 포함 (권장사항)
+  const combinationCount = [hasLetter, hasNumber, hasSpecial].filter(Boolean).length;
+  
+  return combinationCount >= 2;
 };
 
 /**
@@ -128,6 +181,8 @@ const sanitizeInput = (value) => {
 
 module.exports = {
   isSafeSqlInput,
+  isSafeUserid,
+  isSafePassword,
   isValidUserid,
   isValidPassword,
   isValidName,
