@@ -115,7 +115,7 @@ const userController = {
       if (!isValidGender(gender)) {
         return res.status(400).json({
           success: false,
-          message: '성별은 M 또는 F만 가능합니다.'
+          message: '성별은 female 또는 male만 가능합니다.'
         });
       }
       

@@ -10,11 +10,16 @@
 const isSafeSqlInput = (value) => {
   if (typeof value !== 'string') return true;
   
-  // SQL Injection 패턴 검사
+  // SQL Injection 패턴 검사 (대소문자 구분 없이)
   const sqlPatterns = [
-    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|UNION|DECLARE)\b)/i,
-    /(;|\-\-|\/\*|\*\/|xp_|sp_)/i,
-    /(\bOR\b.*=.*|1=1|'=')/i
+    // SQL 키워드 (단어 경계 제거)
+    /(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|UNION|DECLARE|SCRIPT|IFRAME)/i,
+    // 특수 문자 및 SQL 주석
+    /(;|\-\-|\/\*|\*\/|xp_|sp_)/,
+    // SQL 조건문 패턴
+    /(\bOR\b.*=|1\s*=\s*1|'\s*=\s*'|"\s*=\s*")/i,
+    // HTML/Script 태그
+    /(<script|<iframe|javascript:|onerror=|onload=)/i
   ];
   
   return !sqlPatterns.some(pattern => pattern.test(value));
@@ -102,7 +107,7 @@ const isValidAge = (age) => {
  * @returns {boolean} 유효성
  */
 const isValidGender = (gender) => {
-  return gender === 'M' || gender === 'F';
+  return gender === 'female' || gender === 'male';
 };
 
 /**
