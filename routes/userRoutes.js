@@ -7,7 +7,7 @@ const rateLimit = require('express-rate-limit');
 // Rate limiting 설정 (회원가입 전용)
 const registrationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15분
-  max: 5, // IP당 5회 제한 (테스트시 수정)
+  max: 5, // 한 IP당 15분 동안 5개 가입
   message: { 
     success: false, 
     message: '너무 많은 회원가입 시도가 있었습니다. 15분 후에 다시 시도해주세요.' 
