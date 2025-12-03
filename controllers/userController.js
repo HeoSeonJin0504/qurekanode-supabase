@@ -8,6 +8,16 @@ const {
 } = require('../utils/tokenUtil');
 const logger = require('../utils/logger');
 const registrationLock = require('../utils/requestLock');
+const {
+  isValidUserid,
+  isValidPassword,
+  isValidName,
+  isValidPhone,
+  isValidEmail,
+  isValidAge,
+  isValidGender,
+  isSafeSqlInput
+} = require('../utils/validation');
 
 // 사용자 컨트롤러
 const userController = {
@@ -60,6 +70,66 @@ const userController = {
         return res.status(400).json({
           success: false,
           message: '필수 입력값이 누락되었습니다. (아이디, 비밀번호, 이름, 나이, 성별, 전화번호는 필수입니다.)'
+        });
+      }
+      
+      // SQL Injection 방어: 입력값 안전성 검사
+      if (!isSafeSqlInput(userid) || !isSafeSqlInput(name) || 
+          !isSafeSqlInput(phone) || (email && !isSafeSqlInput(email))) {
+        logger.warn(`SQL Injection 시도 감지 - IP: ${req.ip}`);
+        return res.status(400).json({
+          success: false,
+          message: '입력값에 허용되지 않는 문자가 포함되어 있습니다.'
+        });
+      }
+      
+      // 입력값 형식 검증
+      if (!isValidUserid(userid)) {
+        return res.status(400).json({
+          success: false,
+          message: '아이디는 4-20자의 영문, 숫자, 언더스코어만 사용 가능합니다.'
+        });
+      }
+      
+      if (!isValidPassword(password)) {
+        return res.status(400).json({
+          success: false,
+          message: '비밀번호는 8자 이상이며, 영문과 숫자를 포함해야 합니다.'
+        });
+      }
+      
+      if (!isValidName(name)) {
+        return res.status(400).json({
+          success: false,
+          message: '이름은 2-50자의 한글 또는 영문만 사용 가능합니다.'
+        });
+      }
+      
+      if (!isValidAge(age)) {
+        return res.status(400).json({
+          success: false,
+          message: '나이는 1-150 사이의 숫자여야 합니다.'
+        });
+      }
+      
+      if (!isValidGender(gender)) {
+        return res.status(400).json({
+          success: false,
+          message: '성별은 M 또는 F만 가능합니다.'
+        });
+      }
+      
+      if (!isValidPhone(phone)) {
+        return res.status(400).json({
+          success: false,
+          message: '전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)'
+        });
+      }
+      
+      if (email && !isValidEmail(email)) {
+        return res.status(400).json({
+          success: false,
+          message: '이메일 형식이 올바르지 않습니다.'
         });
       }
       
@@ -155,7 +225,6 @@ const userController = {
    */
   async login(req, res) {
     try {
-      // userid, password와 함께 rememberMe 옵션을 받음
       const { userid, password, rememberMe = false } = req.body;
       
       // 필수 입력값 검증
@@ -163,6 +232,23 @@ const userController = {
         return res.status(400).json({
           success: false,
           message: '아이디와 비밀번호를 모두 입력해주세요.'
+        });
+      }
+      
+      // SQL Injection 방어
+      if (!isSafeSqlInput(userid)) {
+        logger.warn(`로그인 SQL Injection 시도 감지 - IP: ${req.ip}`);
+        return res.status(400).json({
+          success: false,
+          message: '입력값에 허용되지 않는 문자가 포함되어 있습니다.'
+        });
+      }
+      
+      // 입력값 형식 검증
+      if (!isValidUserid(userid)) {
+        return res.status(400).json({
+          success: false,
+          message: '아이디 형식이 올바르지 않습니다.'
         });
       }
       
