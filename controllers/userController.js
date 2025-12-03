@@ -7,6 +7,7 @@ const {
   setTokenCookies
 } = require('../utils/tokenUtil');
 const logger = require('../utils/logger');
+const registrationLock = require('../utils/requestLock');
 
 // 사용자 컨트롤러
 const userController = {
@@ -51,9 +52,9 @@ const userController = {
    * 회원가입 처리
    */
   async register(req, res) {
+    const { userid, password, name, age, gender, phone, email } = req.body;
+    
     try {
-      const { userid, password, name, age, gender, phone, email } = req.body;
-      
       // 필수 입력값 검증
       if (!userid || !password || !name || !age || !gender || !phone) {
         return res.status(400).json({
@@ -62,10 +63,20 @@ const userController = {
         });
       }
       
+      // 동시 요청 방지: userid로 잠금 시도
+      if (!registrationLock.acquire(userid)) {
+        logger.warn(`중복 회원가입 요청 차단 - userid: ${userid}`);
+        return res.status(429).json({
+          success: false,
+          message: '회원가입 처리 중입니다. 잠시 후 다시 시도해주세요.'
+        });
+      }
+      
       // 아이디 중복 확인
       const existingUser = await User.findByUserid(userid);
       
       if (existingUser) {
+        registrationLock.release(userid);
         return res.status(409).json({
           success: false,
           message: '이미 사용 중인 아이디입니다.'
@@ -92,6 +103,9 @@ const userController = {
         logger.error('기본 폴더 생성 실패:', folderError);
       }
       
+      // 잠금 해제
+      registrationLock.release(userid);
+      
       return res.status(201).json({
         success: true,
         message: '회원가입이 완료되었습니다.',
@@ -103,6 +117,9 @@ const userController = {
         }
       });
     } catch (error) {
+      // 오류 발생 시 반드시 잠금 해제
+      registrationLock.release(userid);
+      
       logger.error('회원가입 오류:', error);
       
       // Supabase(PostgreSQL) 중복 키 오류 처리 (에러 코드: 23505)

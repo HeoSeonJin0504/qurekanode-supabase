@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const logger = require('./utils/logger');
 const { checkConnection } = require('./config/db');
+const rateLimit = require('express-rate-limit');
 
 // 환경 변수 확인
 const SUPABASE_URL = process.env.SUPABASE_URL;
