@@ -1,4 +1,4 @@
-# 📚 Qurekanode-Supabase
+# Qurekanode-Supabase
 
 Qurekanode-Supabase는 강의 자료를 기반으로 요약본과 문제를 자동 생성하는 학습 플랫폼의 **백엔드 서버(Node.JS)**입니다.
 
