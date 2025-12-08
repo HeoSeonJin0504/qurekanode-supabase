@@ -192,7 +192,7 @@ created_at     TIMESTAMP DEFAULT NOW()
 UNIQUE(user_id, folder_id, question_id, question_index)
 ```
 
-## ⚙️ 환경 변수 설정
+## 환경 변수 설정
 
 `.env` 파일을 생성하고 다음 내용을 설정하세요:
 
@@ -223,7 +223,7 @@ FRONTEND_URL=http://localhost:5173
 ALLOW_ALL_ORIGINS=false
 ```
 
-## 🚀 설치 및 실행
+## 설치 및 실행
 
 ### 1. 저장소 클론
 ```bash
