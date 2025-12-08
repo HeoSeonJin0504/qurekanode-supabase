@@ -2,18 +2,18 @@
 
 Qurekanode-Supabase는 강의 자료를 기반으로 요약본과 문제를 자동 생성하는 학습 플랫폼의 **백엔드 서버(Node.JS)**입니다.
 
-## 🎯 프로젝트 개요
+## 프로젝트 개요
 
 사용자가 강의자료(PDF, PPT)를 업로드하면 ChatGPT API가 이를 분석하여 요약본과 문제를 자동으로 생성합니다. 
 사용자는 생성된 요약본과 문제를 저장하고, 문제를 풀어볼 수 있으며, 원하는 문제를 즐겨찾기에 추가하여 관리할 수 있습니다.
 
 ### 본 프로젝트 주요 기능
 
-- 🔐 **사용자 인증**: 회원가입, 로그인, JWT 기반 인증
-- 📝 **요약본 관리**: 생성된 요약본 저장, 조회, 수정, 삭제
-- ❓ **문제 관리**: 생성된 문제 저장, 조회, 수정, 삭제
-- ⭐ **즐겨찾기**: 문제 즐겨찾기 추가/제거, 폴더별 관리
-- 🔒 **보안**: SQL Injection 방어, Rate Limiting, 입력값 검증
+- **사용자 인증**: 회원가입, 로그인, JWT 기반 인증
+- **요약본 관리**: 생성된 요약본 저장, 조회, 수정, 삭제
+- **문제 관리**: 생성된 문제 저장, 조회, 수정, 삭제
+- **즐겨찾기**: 문제 즐겨찾기 추가/제거, 폴더별 관리
+- **보안**: SQL Injection 방어, Rate Limiting, 입력값 검증
 
 ## 🛠️ 기술 스택
 
@@ -81,7 +81,7 @@ qurekanode-supabase/
 └── nodemon.json         # Nodemon 설정
 ```
 
-## 🔌 API 엔드포인트
+## API 엔드포인트
 
 ### 인증 (Authentication)
 - `POST /api/users/register` - 회원가입
@@ -124,7 +124,7 @@ qurekanode-supabase/
 - `GET /api/problem-summary-meta` - 모든 문제 메타데이터 조회
 - `GET /api/problem-summary-meta/:id` - 특정 문제 메타데이터 조회
 
-## 🗄️ 데이터베이스 구조
+## 데이터베이스 구조
 
 ### users (사용자)
 ```sql
@@ -269,9 +269,17 @@ npm start
 - **CORS 설정**: 허용된 도메인만 접근 가능
 - **입력값 검증**: 아이디, 비밀번호, 이메일 등 형식 검증
 
-## 🤖 개발 지원
-
+## 개발
 본 프로젝트는 **Claude Sonnet 3.7** AI를 활용하여 코드 리뷰, 리팩토링, 문서화 작업을 수행했습니다.
 
-**Note**: 본 README는 백엔드 서버에 대한 문서입니다. 프론트엔드 저장소는 별도로 관리됩니다.
-https://github.com/HeoSeonJin0504/qurekafront.git
+## 저장소
+본 프로젝트는 3개의 저장소로 구성되어 있습니다:
+
+- **백엔드 (Node.js)** - 현재 저장소
+  - 사용자 인증, 데이터 관리, API 서버
+  
+- **프론트엔드 (React)** 
+  - https://github.com/HeoSeonJin0504/qurekafront.git
+  
+- **AI 서버 (FastAPI)** - ChatGPT API 관련 기능
+  - https://github.com/hanataba227/qureka-fastapi.git
