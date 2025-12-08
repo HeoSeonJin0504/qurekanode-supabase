@@ -1,4 +1,6 @@
-const problemSummaryMetaService = require('../services/problemSummaryMetaService');
+const { supabase } = require('../config/db');
+const { formatDate, mapQuestionTypeToClient } = require('../utils/formatUtil');
+const logger = require('../utils/logger');
 
 const problemSummaryMetaController = {
   /**
@@ -6,7 +8,20 @@ const problemSummaryMetaController = {
    */
   async getAllProblemSummaryMeta(req, res) {
     try {
-      const metas = await problemSummaryMetaService.getAllProblemSummaryMeta();
+      const { data: questions, error: questionsError } = await supabase
+        .from('user_questions')
+        .select('selection_id, user_id, file_name, question_type, created_at')
+        .order('created_at', { ascending: false });
+      
+      if (questionsError) throw questionsError;
+      
+      const metas = questions.map((question) => ({
+        id: question.selection_id,
+        userId: question.user_id,
+        fileName: question.file_name,
+        questionType: mapQuestionTypeToClient(question.question_type),
+        createdAt: formatDate(question.created_at)
+      }));
       
       return res.status(200).json({
         success: true,
@@ -14,7 +29,7 @@ const problemSummaryMetaController = {
         metas
       });
     } catch (error) {
-      console.error('문제 메타데이터 조회 오류:', error);
+      logger.error('문제 메타데이터 조회 오류:', error);
       return res.status(500).json({
         success: false,
         message: '서버 오류가 발생했습니다.'
@@ -36,7 +51,13 @@ const problemSummaryMetaController = {
         });
       }
       
-      const meta = await problemSummaryMetaService.getProblemSummaryMetaById(id);
+      const { data: meta, error: metaError } = await supabase
+        .from('user_questions')
+        .select('selection_id, user_id, file_name, question_type, created_at')
+        .eq('selection_id', id)
+        .single();
+      
+      if (metaError) throw metaError;
       
       if (!meta) {
         return res.status(404).json({
@@ -47,10 +68,16 @@ const problemSummaryMetaController = {
       
       return res.status(200).json({
         success: true,
-        meta
+        meta: {
+          id: meta.selection_id,
+          userId: meta.user_id,
+          fileName: meta.file_name,
+          questionType: mapQuestionTypeToClient(meta.question_type),
+          createdAt: formatDate(meta.created_at)
+        }
       });
     } catch (error) {
-      console.error(`문제 ID ${req.params.id} 메타데이터 조회 오류:`, error);
+      logger.error(`문제 ID ${req.params.id} 메타데이터 조회 오류:`, error);
       return res.status(500).json({
         success: false,
         message: '서버 오류가 발생했습니다.'

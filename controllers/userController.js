@@ -107,13 +107,14 @@ const userController = {
           message: '아이디는 5-20자의 영문 소문자, 숫자, -, _만 사용 가능합니다.'
         });
       }
+      // 테스트 계정 만들 때 여기 주석
       
-      if (!isValidPassword(password)) {
-        return res.status(400).json({
-          success: false,
-          message: '비밀번호는 8-16자이며, 영문/숫자/특수문자 중 2가지 이상을 조합해야 합니다.'
-        });
-      }
+      // if (!isValidPassword(password)) {
+      //   return res.status(400).json({
+      //     success: false,
+      //     message: '비밀번호는 8-16자이며, 영문/숫자/특수문자 중 2가지 이상을 조합해야 합니다.'
+      //   });
+      // }
       
       if (!isValidName(name)) {
         return res.status(400).json({

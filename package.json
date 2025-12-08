@@ -32,6 +32,7 @@
   "overrides": {
     "glob": "^10.3.10",
     "rimraf": "^5.0.5",
-    "inflight": "^2.0.0"
+    "inflight": "^2.0.0",
+    "jws": "^3.2.3"
   }
 }
