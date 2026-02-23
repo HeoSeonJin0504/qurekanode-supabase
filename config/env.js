@@ -49,6 +49,7 @@ const config = {
     nodeEnv: process.env.NODE_ENV || 'development',
     isProduction: process.env.NODE_ENV === 'production',
     backendUrl: process.env.BACKEND_URL || 'http://localhost:3000',
+    testUserId: process.env.TEST_USERID || null, // 테스트 계정 ID
   },
 
   // CORS
