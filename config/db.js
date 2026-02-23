@@ -4,7 +4,6 @@ import logger from '../utils/logger.js';
 
 const { Pool } = pg;
 
-// Supabase PostgreSQL Pool
 const pool = new Pool({
   connectionString: config.db.url,
   ssl: config.server.isProduction ? { rejectUnauthorized: false } : false,
@@ -17,12 +16,7 @@ pool.on('error', (err) => {
   logger.error('PostgreSQL Pool 오류: ' + err.message);
 });
 
-/**
- * SQL 쿼리 실행
- * @param {string} text - SQL 문
- * @param {Array}  params - 파라미터 배열
- * @returns {Promise<pg.QueryResult>}
- */
+// SQL 쿼리를 실행하고 실행 시간을 로깅
 export async function query(text, params = []) {
   const start = Date.now();
   try {
@@ -35,10 +29,7 @@ export async function query(text, params = []) {
   }
 }
 
-/**
- * 트랜잭션 실행
- * @param {Function} callback - (client) => Promise<any>
- */
+// 트랜잭션으로 콜백을 실행하고 실패 시 롤백
 export async function withTransaction(callback) {
   const client = await pool.connect();
   try {
@@ -54,10 +45,7 @@ export async function withTransaction(callback) {
   }
 }
 
-/**
- * DB 연결 상태 확인
- * @returns {Promise<boolean>}
- */
+// DB 연결 상태 확인
 export async function checkConnection() {
   try {
     await pool.query('SELECT 1');

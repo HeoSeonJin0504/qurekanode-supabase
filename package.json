@@ -3,10 +3,10 @@
   "version": "3.0.0",
   "description": "Qureka Node.js API (ESM, PostgreSQL 직접 연결)",
   "type": "module",
-  "main": "src/app.js",
+  "main": "app.js",
   "scripts": {
     "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
+    "dev": "nodemon",
     "test": "node --experimental-vm-modules node_modules/.bin/jest",
     "audit": "npm audit fix"
   },

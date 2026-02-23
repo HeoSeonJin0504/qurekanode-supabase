@@ -1,21 +1,13 @@
-const express = require('express');
-const router = express.Router();
-const summaryController = require('../controllers/summaryController');
-const { verifyToken } = require('../middlewares/authMiddleware');
+import { Router } from 'express';
+import summaryController from '../controllers/summaryController.js';
+import { verifyToken } from '../middlewares/authMiddleware.js';
 
-// 요약 저장
-router.post('/', summaryController.saveSummary);
+const router = Router();
 
-// 사용자별 요약 목록 조회
+router.post('/',            summaryController.saveSummary);
 router.get('/user/:userId', summaryController.getUserSummaries);
+router.get('/:id',          summaryController.getSummaryDetail);
+router.patch('/:id/name',   verifyToken, summaryController.updateSummaryName);
+router.delete('/:id',       verifyToken, summaryController.deleteSummary);
 
-// 요약 상세 조회
-router.get('/:id', summaryController.getSummaryDetail);
-
-// 요약 이름 변경 (인증 필요)
-router.patch('/:id/name', verifyToken, summaryController.updateSummaryName);
-
-// 요약 삭제 (인증 필요)
-router.delete('/:id', verifyToken, summaryController.deleteSummary);
-
-module.exports = router;
+export default router;

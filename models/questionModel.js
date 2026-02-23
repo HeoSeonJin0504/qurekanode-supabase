@@ -1,269 +1,73 @@
-const { supabase } = require('../config/db');
-const { formatDate } = require('../utils/formatUtil');
+import { query } from '../config/db.js';
+import { formatDate } from '../utils/formatUtil.js';
 
-/**
- * 클라이언트 문제 타입을 DB 타입으로 변환
- */
-function mapQuestionTypeToDb(clientType) {
-  const mapping = {
-    'n지 선다형': 'multiple_choice',
-    '순서 배열형': 'sequence',
-    '빈칸 채우기형': 'fill_in_the_blank',
-    '참거짓형': 'true_false',
-    '단답형': 'short_answer',
-    '서술형': 'descriptive'
-  };
-  
-  return mapping[clientType] || clientType;
+function mapTypeToDb(clientType) {
+  const m = { 'n지 선다형': 'multiple_choice', '순서 배열형': 'sequence', '빈칸 채우기형': 'fill_in_the_blank', '참거짓형': 'true_false', '단답형': 'short_answer', '서술형': 'descriptive' };
+  return m[clientType] || clientType;
 }
 
-/**
- * DB 문제 타입을 클라이언트 타입으로 변환
- */
-function mapQuestionTypeToClient(dbType) {
-  const mapping = {
-    'multiple_choice': 'n지 선다형',
-    'sequence': '순서 배열형',
-    'fill_in_the_blank': '빈칸 채우기형',
-    'true_false': '참거짓형',
-    'short_answer': '단답형',
-    'descriptive': '서술형'
-  };
-  
-  return mapping[dbType] || dbType;
+function mapTypeToClient(dbType) {
+  const m = { multiple_choice: 'n지 선다형', sequence: '순서 배열형', fill_in_the_blank: '빈칸 채우기형', true_false: '참거짓형', short_answer: '단답형', descriptive: '서술형' };
+  return m[dbType] || dbType;
+}
+
+function toClient(row) {
+  return { ...row, question_type: mapTypeToClient(row.question_type), formatted_date: formatDate(row.created_at), question_text: row.question_data?.question_text };
 }
 
 class Question {
-  /**
-   * 새 문제 정보 저장
-   * @param {Object} questionData - 문제 데이터 객체
-   * @returns {Object} 저장된 문제 정보
-   */
-  static async create(questionData) {
+  static async create({ userId, fileName, questionName, questionType, questionText }) {
     try {
-      const { userId, fileName, questionName, questionType, questionText } = questionData;
-      
-      // 필수 필드 검증
-      if (!userId || !fileName || !questionType || !questionText) {
-        throw new Error('필수 필드가 누락되었습니다.');
-      }
-      
-      // questionType 값을 데이터베이스 타입으로 매핑
-      const dbQuestionType = mapQuestionTypeToDb(questionType);
-      
-      // 문제 데이터를 JSON으로 저장 (향후 확장성)
-      const questionDataForDb = {
-        question_text: questionText,
-        // 추가 필드는 여기에 추가
-      };
-      
-      // Supabase에 문제 정보 저장
-      const { data, error } = await supabase
-        .from('user_questions')
-        .insert({
-          user_id: userId,
-          file_name: fileName,
-          question_name: questionName || 'Untitled Question',
-          question_type: dbQuestionType,
-          question_data: questionDataForDb
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      // 결과 반환 - 클라이언트 친화적인 형태로 매핑
-      return {
-        selection_id: data.selection_id,
-        user_id: data.user_id,
-        file_name: data.file_name,
-        question_name: data.question_name,
-        question_type: mapQuestionTypeToClient(data.question_type),
-        created_at: data.created_at,
-        formatted_date: formatDate(data.created_at)
-      };
+      if (!userId || !fileName || !questionType || !questionText) throw new Error('필수 필드가 누락되었습니다.');
+      const { rows } = await query(
+        `INSERT INTO user_questions (user_id, file_name, question_name, question_type, question_data)
+         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [userId, fileName, questionName || 'Untitled Question', mapTypeToDb(questionType), JSON.stringify({ question_text: questionText })]
+      );
+      return toClient(rows[0]);
     } catch (error) {
       console.error('문제 정보 저장 오류:', error.message);
       throw error;
     }
   }
-  
-  /**
-   * 사용자 ID로 문제 목록 조회
-   * @param {number} userId - 사용자 ID
-   * @returns {Array} 문제 목록
-   */
+
   static async findByUserId(userId) {
     try {
-      const { data, error } = await supabase
-        .from('user_questions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      // DB 값을 클라이언트 친화적인 값으로 매핑
-      return data.map(row => ({
-        ...row,
-        question_type: mapQuestionTypeToClient(row.question_type),
-        formatted_date: formatDate(row.created_at),
-        question_text: row.question_data.question_text
-      }));
+      const { rows } = await query('SELECT * FROM user_questions WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
+      return rows.map(toClient);
     } catch (error) {
       console.error('문제 목록 조회 오류:', error.message);
       throw error;
     }
   }
-  
-  /**
-   * ID로 특정 문제 조회
-   * @param {number} selectionId - 문제 ID
-   * @returns {Object|null} 문제 정보 또는 null
-   */
+
   static async findById(selectionId) {
     try {
-      const { data, error } = await supabase
-        .from('user_questions')
-        .select('*')
-        .eq('selection_id', selectionId)
-        .single();
-      
-      if (error) {
-        if (error.code === 'PGRST116') return null;
-        throw error;
-      }
-      
-      // DB 값을 클라이언트 친화적인 값으로 매핑
-      return {
-        ...data,
-        question_type: mapQuestionTypeToClient(data.question_type),
-        formatted_date: formatDate(data.created_at),
-        question_text: data.question_data.question_text
-      };
+      const { rows } = await query('SELECT * FROM user_questions WHERE selection_id = $1', [selectionId]);
+      return rows[0] ? toClient(rows[0]) : null;
     } catch (error) {
       console.error('문제 정보 조회 오류:', error.message);
       throw error;
     }
   }
 
-  /**
-   * 문제 검색
-   * @param {Object} criteria - 검색 조건
-   * @returns {Array} 검색 결과
-   */
-  static async searchQuestions(criteria) {
-    try {
-      let query = supabase
-        .from('user_questions')
-        .select('*')
-        .eq('user_id', criteria.userId);
-      
-      // 파일명 검색어가 있으면 조건 추가
-      if (criteria.searchQuery) {
-        query = query.ilike('file_name', `%${criteria.searchQuery}%`);
-      }
-      
-      // 문제 유형 조건이 있으면 추가
-      if (criteria.questionType) {
-        // 클라이언트 문제 유형을 DB 문제 유형으로 변환
-        const dbQuestionType = mapQuestionTypeToDb(criteria.questionType);
-        query = query.eq('question_type', dbQuestionType);
-      }
-      
-      // 정렬 조건 추가
-      query = query.order('created_at', { ascending: false });
-      
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      // DB 값을 클라이언트 친화적인 값으로 매핑
-      return data.map(row => ({
-        ...row,
-        question_type: mapQuestionTypeToClient(row.question_type),
-        formatted_date: formatDate(row.created_at),
-        question_text: row.question_data.question_text
-      }));
-    } catch (error) {
-      console.error('문제 검색 오류:', error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * 문제 이름 변경
-   * @param {number} selectionId - 문제 ID
-   * @param {string} newName - 새로운 이름
-   * @returns {Object} 업데이트된 문제 정보
-   */
   static async updateName(selectionId, newName) {
     try {
-      if (!newName || newName.trim() === '') {
-        throw new Error('문제 이름은 비어있을 수 없습니다.');
-      }
-
-      const { data, error } = await supabase
-        .from('user_questions')
-        .update({ question_name: newName.trim() })
-        .eq('selection_id', selectionId)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      return {
-        ...data,
-        question_type: mapQuestionTypeToClient(data.question_type),
-        formatted_date: formatDate(data.created_at),
-        question_text: data.question_data.question_text
-      };
+      if (!newName?.trim()) throw new Error('문제 이름은 비어있을 수 없습니다.');
+      const { rows } = await query(
+        'UPDATE user_questions SET question_name = $1 WHERE selection_id = $2 RETURNING *',
+        [newName.trim(), selectionId]
+      );
+      return toClient(rows[0]);
     } catch (error) {
       console.error('문제 이름 변경 오류:', error.message);
       throw error;
     }
   }
 
-  /**
-   * 모든 문제 목록 조회
-   * @returns {Array} 모든 문제 목록
-   */
-  static async findAll() {
-    try {
-      const { data, error } = await supabase
-        .from('user_questions')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      // DB 값을 클라이언트 친화적인 값으로 매핑
-      return data.map(row => ({
-        ...row,
-        question_type: mapQuestionTypeToClient(row.question_type),
-        formatted_date: formatDate(row.created_at),
-        question_text: row.question_data.question_text
-      }));
-    } catch (error) {
-      console.error('모든 문제 조회 오류:', error.message);
-      throw error;
-    }
-  }
-  
-  /**
-   * ID로 문제 정보 삭제
-   * @param {number} selectionId - 삭제할 문제 ID
-   * @returns {boolean} 삭제 성공 여부
-   */
   static async deleteById(selectionId) {
     try {
-      const { error } = await supabase
-        .from('user_questions')
-        .delete()
-        .eq('selection_id', selectionId);
-      
-      if (error) throw error;
-      
+      await query('DELETE FROM user_questions WHERE selection_id = $1', [selectionId]);
       return true;
     } catch (error) {
       console.error('문제 정보 삭제 오류:', error.message);
@@ -272,4 +76,4 @@ class Question {
   }
 }
 
-module.exports = Question;
+export default Question;

@@ -1,6 +1,7 @@
 {
   "ignore": ["node_modules/", ".git/", "public/"],
-  "watch": ["*.js", "config/", "controllers/", "models/", "routes/"],
+  "watch": ["./"],
   "ext": "js,json",
-  "delay": "500"
+  "delay": "500",
+  "exec": "node app.js"
 }
