@@ -78,6 +78,20 @@ const questionController = {
       return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
   },
+
+  // 키워드·타입으로 문제 검색
+  async searchQuestions(req, res) {
+    try {
+      const { userId } = req.params;
+      const { query, type } = req.query;
+      if (!userId) return res.status(400).json({ success: false, message: '사용자 ID가 필요합니다.' });
+      const questions = await Question.searchByUserId(userId, { query, type });
+      return res.status(200).json({ success: true, count: questions.length, questions });
+    } catch (error) {
+      logger.error('문제 검색 오류:', error);
+      return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+    }
+  },
 };
 
 export default questionController;

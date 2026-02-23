@@ -40,7 +40,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-retry'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-retry', 'ngrok-skip-browser-warning'],
 }));
 
 // 기본 미들웨어

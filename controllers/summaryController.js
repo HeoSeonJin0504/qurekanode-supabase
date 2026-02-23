@@ -78,6 +78,33 @@ const summaryController = {
       return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
   },
+
+  // 키워드·타입으로 요약 검색
+  async searchSummaries(req, res) {
+    try {
+      const { userId } = req.params;
+      const { query, type } = req.query;
+      if (!userId) return res.status(400).json({ success: false, message: '사용자 ID가 필요합니다.' });
+      const summaries = await Summary.searchByUserId(userId, { query, type });
+      return res.status(200).json({ success: true, count: summaries.length, summaries });
+    } catch (error) {
+      logger.error('요약 검색 오류:', error);
+      return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+    }
+  },
+
+  // summary_text 제외한 메타데이터만 반환
+  async getSummaryMetadata(req, res) {
+    try {
+      const { userId } = req.params;
+      if (!userId) return res.status(400).json({ success: false, message: '사용자 ID가 필요합니다.' });
+      const summaries = await Summary.findMetaByUserId(userId);
+      return res.status(200).json({ success: true, count: summaries.length, summaries });
+    } catch (error) {
+      logger.error('요약 메타데이터 조회 오류:', error);
+      return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+    }
+  },
 };
 
 export default summaryController;

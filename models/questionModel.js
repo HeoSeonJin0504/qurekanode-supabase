@@ -74,6 +74,31 @@ class Question {
       throw error;
     }
   }
+
+  // 키워드·타입으로 문제 검색
+  static async searchByUserId(userId, { query: searchQuery, type } = {}) {
+    try {
+      let sql = 'SELECT * FROM user_questions WHERE user_id = $1';
+      const params = [userId];
+      let idx = 2;
+      if (searchQuery) {
+        sql += ` AND (question_name ILIKE $${idx} OR file_name ILIKE $${idx})`;
+        params.push(`%${searchQuery}%`);
+        idx++;
+      }
+      if (type) {
+        sql += ` AND question_type = $${idx}`;
+        params.push(mapTypeToDb(type));
+        idx++;
+      }
+      sql += ' ORDER BY created_at DESC';
+      const { rows } = await query(sql, params);
+      return rows.map(toClient);
+    } catch (error) {
+      console.error('문제 검색 오류:', error.message);
+      throw error;
+    }
+  }
 }
 
 export default Question;

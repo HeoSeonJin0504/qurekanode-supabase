@@ -81,6 +81,49 @@ class Summary {
       throw error;
     }
   }
+
+  // 키워드·타입으로 요약 검색
+  static async searchByUserId(userId, { query: searchQuery, type } = {}) {
+    try {
+      let sql = 'SELECT * FROM user_summaries WHERE user_id = $1';
+      const params = [userId];
+      let idx = 2;
+      if (searchQuery) {
+        sql += ` AND (summary_name ILIKE $${idx} OR summary_text ILIKE $${idx})`;
+        params.push(`%${searchQuery}%`);
+        idx++;
+      }
+      if (type) {
+        sql += ` AND summary_type = $${idx}`;
+        params.push(mapTypeToDb(type));
+        idx++;
+      }
+      sql += ' ORDER BY created_at DESC';
+      const { rows } = await query(sql, params);
+      return rows.map(toClient);
+    } catch (error) {
+      console.error('요약 검색 오류:', error.message);
+      throw error;
+    }
+  }
+
+  // summary_text 제외한 메타데이터만 조회 (목록 로딩 경량화)
+  static async findMetaByUserId(userId) {
+    try {
+      const { rows } = await query(
+        'SELECT selection_id, user_id, file_name, summary_name, summary_type, created_at FROM user_summaries WHERE user_id = $1 ORDER BY created_at DESC',
+        [userId]
+      );
+      return rows.map((row) => ({
+        ...row,
+        summary_type: mapTypeToClient(row.summary_type),
+        formatted_date: formatDate(row.created_at),
+      }));
+    } catch (error) {
+      console.error('요약 메타데이터 조회 오류:', error.message);
+      throw error;
+    }
+  }
 }
 
 export default Summary;

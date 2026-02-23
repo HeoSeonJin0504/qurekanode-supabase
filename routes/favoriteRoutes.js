@@ -5,6 +5,7 @@ const router = Router();
 
 router.get('/folders/:userId',                     favoriteController.getFolders);
 router.post('/folders',                            favoriteController.createFolder);
+router.post('/folders/ensure-default',             favoriteController.ensureDefaultFolder);
 router.get('/folders/default/:userId',             favoriteController.getOrCreateDefaultFolder);
 router.delete('/folders/:folderId',                favoriteController.deleteFolder);
 router.post('/questions',                          favoriteController.addQuestion);

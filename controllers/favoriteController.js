@@ -148,6 +148,19 @@ const favoriteController = {
       return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
     }
   },
+
+  // POST body의 userId로 기본 폴더 조회 또는 생성 (ensure-default 엔드포인트용)
+  async ensureDefaultFolder(req, res) {
+    try {
+      const userId = req.body?.userId || req.params?.userId;
+      if (!userId) return res.status(400).json({ success: false, message: '사용자 ID가 필요합니다.' });
+      const folder = await Favorite.getOrCreateDefaultFolder(userId);
+      return res.status(200).json({ success: true, folder });
+    } catch (error) {
+      logger.error('기본 폴더 보장 오류:', error);
+      return res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+    }
+  },
 };
 
 export default favoriteController;
