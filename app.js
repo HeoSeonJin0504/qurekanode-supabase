@@ -6,6 +6,7 @@ import helmet from 'helmet';
 
 import config from './config/env.js';
 import { checkConnection } from './config/db.js';
+import { initDb } from './config/initDb.js';
 import logger from './utils/logger.js';
 
 import { generalLimiter } from './middlewares/rateLimiter.js';
@@ -92,12 +93,16 @@ app.use(globalErrorHandler);
 // 서버 시작 
 const { port } = config.server;
 
-const server = app.listen(port, () => {
+const server = app.listen(port, async () => {
   logger.info(`서버 실행 중 - 포트 ${port} (${config.server.nodeEnv})`);
 
-  checkConnection().then((connected) => {
-    logger.info(`DB ${connected ? '연결됨' : '연결 실패'}`);
-  });
+  const connected = await checkConnection();
+  logger.info(`DB ${connected ? '연결됨' : '연결 실패'}`);
+
+  if (connected) {
+    // DB 연결 성공 시 테이블 자동 생성
+    await initDb();
+  }
 });
 
 // Graceful Shutdown
