@@ -47,15 +47,65 @@ export const callChatGpt = async (systemMessage, userMessage) => {
 };
 
 /**
- * PDF 텍스트 추출 (pdf-parse 사용)
+ * PDF 텍스트 추출 (pdfjs-dist legacy 사용 - 한글 CIDFont 지원)
+ * pdf-parse 내장 구버전(2.x) 대신 pdfjs-dist 최신 버전을 직접 사용해
+ * 한글/CJK PDF의 ToUnicode CMap을 올바르게 처리합니다.
  * @param {Buffer} buffer - PDF 파일 버퍼
  * @returns {Promise<string>}
  */
 export const extractTextFromPdf = async (buffer) => {
   try {
-    const pdfParse = (await import('pdf-parse')).default;
-    const data = await pdfParse(buffer);
-    return data.text;
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+
+    // Node.js 환경: 실제 worker 파일 경로를 지정해야 fake-worker 오류 방지
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      '../node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs',
+      import.meta.url
+    ).href;
+
+    const uint8Array = new Uint8Array(buffer);
+    const loadingTask = pdfjsLib.getDocument({
+      data: uint8Array,
+      // 표준 CMap 경로 – 한글 등 CJK ToUnicode 매핑에 필요
+      cMapUrl: new URL('../node_modules/pdfjs-dist/cmaps/', import.meta.url).href,
+      cMapPacked: true,
+      // 표준 Adobe 폰트 데이터 경로
+      standardFontDataUrl: new URL('../node_modules/pdfjs-dist/standard_fonts/', import.meta.url).href,
+      useSystemFonts: false,
+      disableFontFace: true,
+      verbosity: 0,
+    });
+
+    const pdfDocument = await loadingTask.promise;
+    const totalPages = pdfDocument.numPages;
+    logger.debug(`PDF 총 페이지 수: ${totalPages}`);
+
+    let fullText = '';
+
+    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+      const page = await pdfDocument.getPage(pageNum);
+      const textContent = await page.getTextContent();
+
+      // 각 텍스트 항목을 개행 기준으로 이어 붙임
+      const pageText = textContent.items
+        .map(item => ('str' in item ? item.str : ''))
+        .join(' ')
+        .trim();
+
+      if (pageText) fullText += pageText + '\n';
+      page.cleanup();
+    }
+
+    await pdfDocument.destroy();
+
+    const extracted = fullText.trim();
+    logger.debug(`PDF 텍스트 추출 완료 - 문자 수: ${extracted.length}`);
+
+    if (extracted.length < 50) {
+      logger.warn('PDF에서 추출된 텍스트가 너무 짧습니다. 이미지 기반(스캔) PDF이거나 인코딩 문제일 수 있습니다.');
+    }
+
+    return extracted;
   } catch (error) {
     logger.error('PDF 텍스트 추출 오류: ' + error.message);
     throw new Error('PDF 텍스트 추출에 실패했습니다.');
