@@ -54,6 +54,10 @@ const QUESTION_TYPE_TO_PROMPT_KEY = {
   서술: "문제 생성_서술형",
 };
 
+// gpt-4o-mini 컨텍스트 한도(128k) 내에서 안전하게 사용할 최대 토큰 수
+const MAX_CONTENT_TOKENS_SUMMARY  = 20000; // 요약
+const MAX_CONTENT_TOKENS_QUESTION = 15000; // 문제 생성
+
 const aiController = {
   /**
    * 파일 업로드 후 텍스트 요약 생성
@@ -114,8 +118,8 @@ const aiController = {
         });
       }
 
-      // 토큰 제한 적용
-      const truncatedText = truncateByTokens(extractedText, 6000);
+      // content를 프롬프트에 넣기 전에 토큰 제한 적용 (callChatGpt 내부가 아닌 여기서 처리하여 문서 전체가 가능한 한 포함되도록)
+      const safeContent = truncateByTokens(extractedText, MAX_CONTENT_TOKENS_SUMMARY);
 
       // 프롬프트 생성
       // SUMMARY_TYPES 형식: '내용 요약_기본 요약' — 프론트에서 단축형으로 올 경우 전체 키로 변환
@@ -124,7 +128,7 @@ const aiController = {
         : `내용 요약_${summaryType}`;
       const { system: systemMessage, user: userMessage } = getPrompt(
         summaryTypeKey,
-        truncatedText,
+        safeContent,
         {
           summaryLevel: level,
           field,
@@ -142,7 +146,8 @@ const aiController = {
       }
 
       logger.info(
-        `요약 생성 시작 - 타입: ${summaryTypeKey}, 레벨: ${level}, 분야: ${field}`,
+        `요약 생성 시작 - 타입: ${summaryTypeKey}, 레벨: ${level}, 분야: ${field}, ` +
+        `원본 ${extractedText.length}자 → 전달 ${safeContent.length}자`,
       );
 
       // OpenAI 호출
@@ -217,14 +222,14 @@ const aiController = {
       // 문제 개수 제한
       const count = Math.min(Math.max(parseInt(questionCount) || 5, 1), 20);
 
-      // 토큰 제한 적용
-      const truncatedText = truncateByTokens(summaryText, 5000);
+      // content를 프롬프트에 넣기 전에 토큰 제한 적용
+      const safeContent = truncateByTokens(summaryText, MAX_CONTENT_TOKENS_QUESTION);
 
       // 프롬프트 키 변환
       const questionTypeKey = QUESTION_TYPE_TO_PROMPT_KEY[normalizedType];
       const { system: systemMessage, user: userMessage } = getPrompt(
         questionTypeKey,
-        truncatedText,
+        safeContent,
         {
           questionLevel: level,
           questionCount: count,

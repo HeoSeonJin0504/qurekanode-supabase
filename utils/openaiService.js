@@ -2,8 +2,6 @@
  * OpenAI 서비스
  */
 import OpenAI from 'openai';
-import fs from 'fs';
-import path from 'path';
 import config from '../config/env.js';
 import logger from '../utils/logger.js';
 
@@ -11,30 +9,40 @@ import logger from '../utils/logger.js';
 const openai = new OpenAI({ apiKey: config.openai.apiKey });
 
 /**
- * 텍스트 토큰 수 제한 
- * 한국어 포함 문서의 경우 문자 수 기준으로 근사
+ * 텍스트를 토큰 수 기준으로 자르는 유틸 함수
+ * - 호출부(aiController)에서 content를 프롬프트에 넣기 전에 사용
+ * - callChatGpt 내부에서는 더 이상 호출하지 않음
+ *
+ * 한국어 포함 문서 근사 기준:
+ *   영어  1 token ≈ 4 chars
+ *   한국어 1 token ≈ 1.5 chars
+ *   → 혼합 문서 보수적 적용: 1 token ≈ 1.5 chars
  */
-export const truncateByTokens = (text, maxTokens = config.openai.maxTokens) => {
-  // 영어 기준 1 token ~ 4 chars, 한국어 기준 1 token ~ 1.5 chars
-  // 1 token ~ 2 chars 적용
-  const maxChars = maxTokens * 2;
-  return text.length > maxChars ? text.slice(0, maxChars) : text;
+export const truncateByTokens = (text, maxTokens) => {
+  const maxChars = Math.floor(maxTokens * 1.5);
+  if (text.length <= maxChars) return text;
+
+  const truncated = text.slice(0, maxChars);
+  logger.warn(
+    `텍스트가 ${maxTokens} 토큰 한도를 초과하여 앞부분 ${maxChars}자로 잘렸습니다. ` +
+    `(원본 ${text.length}자 → ${truncated.length}자)`
+  );
+  return truncated;
 };
 
 /**
- * ChatGPT 요약/생성 실행
+ * ChatGPT 호출
+ * - truncate는 호출부에서 완료된 것으로 간주하여 여기서는 하지 않음
  * @param {string} systemMessage
  * @param {string} userMessage
  * @returns {Promise<{result: string, usage: object}>}
  */
 export const callChatGpt = async (systemMessage, userMessage) => {
-  const truncatedUser = truncateByTokens(userMessage);
-
   const completion = await openai.chat.completions.create({
     model: config.openai.model,
     messages: [
       { role: 'system', content: systemMessage },
-      { role: 'user',   content: truncatedUser },
+      { role: 'user',   content: userMessage },
     ],
     temperature: 0.7,
   });
@@ -49,7 +57,7 @@ export const callChatGpt = async (systemMessage, userMessage) => {
 /**
  * PDF 텍스트 추출 (pdfjs-dist legacy 사용 - 한글 CIDFont 지원)
  * pdf-parse 내장 구버전(2.x) 대신 pdfjs-dist 최신 버전을 직접 사용해
- * 한글/CJK PDF의 ToUnicode CMap을 올바르게 처리합니다.
+ * 한글/CJK PDF의 ToUnicode CMap을 올바르게 처리
  * @param {Buffer} buffer - PDF 파일 버퍼
  * @returns {Promise<string>}
  */
