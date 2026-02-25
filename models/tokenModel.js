@@ -1,5 +1,5 @@
 import { query } from '../config/db.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 class Token {
   // 기존 토큰 삭제 후 새 리프레시 토큰 저장

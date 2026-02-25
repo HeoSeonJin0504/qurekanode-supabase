@@ -1,5 +1,5 @@
 import { query } from '../config/db.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 class User {
   // 비밀번호를 bcrypt로 해싱하여 사용자 생성
