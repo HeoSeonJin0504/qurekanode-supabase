@@ -1,229 +1,250 @@
-# Qurekanode-Supabase
+# Qureka (Backend - Node.js)
 
-Qurekanode-Supabase는 강의 자료를 기반으로 요약본과 문제를 자동 생성하는 학습 플랫폼의 **백엔드 서버(Node.JS)**입니다.
+강의 자료(PDF, PPTX)를 업로드하면 OpenAI API가 이를 분석하여  
+요약본과 문제를 자동으로 생성하는 학습 플랫폼의 **백엔드 서버**입니다.
 
-## 프로젝트 개요
+---
 
-사용자가 강의자료(PDF, PPT)를 업로드하면 ChatGPT API가 이를 분석하여 요약본과 문제를 자동으로 생성합니다. 
-사용자는 생성된 요약본과 문제를 저장하고, 문제를 풀어볼 수 있으며, 원하는 문제를 즐겨찾기에 추가하여 관리할 수 있습니다.
+## 주요 기능
 
-### 본 프로젝트 주요 기능
+- 사용자 회원가입 / 로그인 (JWT HttpOnly Cookie 인증)
+- PDF · PPTX 파일 업로드 및 텍스트 추출 (한글 CIDFont 지원)
+- OpenAI API 기반 요약본 자동 생성 (학습 수준 · 전공 분야 선택 가능)
+- OpenAI API 기반 문제 자동 생성 (객관식, 순서 배열, 참/거짓, 빈칸 채우기, 단답형, 서술형)
+- 요약본 · 문제 저장, 조회, 수정, 삭제
+- 즐겨찾기 폴더별 문제 관리
+- SQL Injection 방어, Rate Limiting, 입력값 검증
 
-- **사용자 인증**: 회원가입, 로그인, JWT 기반 인증
-- **요약본 관리**: 생성된 요약본 저장, 조회, 수정, 삭제
-- **문제 관리**: 생성된 문제 저장, 조회, 수정, 삭제
-- **즐겨찾기**: 문제 즐겨찾기 추가/제거, 폴더별 관리
-- **보안**: SQL Injection 방어, Rate Limiting, 입력값 검증
+---
 
 ## 🛠️ 기술 스택
 
-### Core
-- **Node.js** (v16+) - 서버 런타임
-- **Express** (v4.18.2) - 웹 프레임워크
+| 구분 | 기술 |
+|------|------|
+| Runtime | Node.js 18+ (ESM) |
+| Framework | Express 5.x |
+| Database | PostgreSQL (Supabase, `pg` 직접 연결) |
+| Auth | JWT (HttpOnly Cookie) · bcrypt |
+| File Upload | multer (메모리 스토리지) |
+| PDF 파싱 | pdfjs-dist (한글 지원) · pdf-parse (폴백) |
+| PPTX 파싱 | adm-zip (XML 직접 파싱) |
+| Token 계산 | tiktoken |
+| AI | OpenAI API (gpt-4o-mini) |
+| Security | helmet · express-rate-limit · CORS |
+| Logging | Winston |
 
-### Database & Authentication
-- **Supabase** (v2.39.0) - PostgreSQL 기반 BaaS, 데이터베이스 및 실시간 기능
-- **bcrypt** (v5.1.1) - 비밀번호 해싱
-- **jsonwebtoken** (v9.0.2) - JWT 토큰 생성 및 검증
-
-### Security & Middleware
-- **cors** (v2.8.5) - Cross-Origin Resource Sharing 처리
-- **express-rate-limit** (v7.5.1) - API 요청 제한 (DoS 공격 방어)
-- **cookie-parser** (v1.4.6) - 쿠키 파싱
-
-### Utilities
-- **dotenv** (v16.3.1) - 환경 변수 관리
-- **winston** (v3.11.0) - 로깅 시스템
-
-### Development
-- **nodemon** (v3.0.2) 
-- **jest** (v29.7.0) 
-- **supertest** (v7.1.3)
+---
 
 ## 📁 프로젝트 구조
 
 ```
-qurekanode-supabase/
-├── config/              # 설정 파일
-│   └── db.js           # Supabase 연결 설정
-├── controllers/         # 요청 처리 로직
-│   ├── authController.js           # 인증 관련 컨트롤러
-│   ├── userController.js           # 사용자 관리
-│   ├── summaryController.js        # 요약본 관리
-│   ├── questionController.js       # 문제 관리
-│   ├── favoriteController.js       # 즐겨찾기 관리
-│   └── problemSummaryMetaController.js  # 메타데이터 조회
-├── models/              # 데이터 모델 (데이터베이스 쿼리)
-│   ├── userModel.js                # 사용자 모델
-│   ├── tokenModel.js               # 토큰 모델
-│   ├── summaryModel.js             # 요약본 모델
-│   ├── questionModel.js            # 문제 모델
-│   └── favoriteModel.js            # 즐겨찾기 모델
-├── routes/              # API 라우트 정의
-│   ├── authRoutes.js               # 인증 라우트
-│   ├── userRoutes.js               # 사용자 라우트
-│   ├── summaryRoutes.js            # 요약본 라우트
-│   ├── questionRoutes.js           # 문제 라우트
-│   ├── favoriteRoutes.js           # 즐겨찾기 라우트
-│   └── problemSummaryMeta.js       # 메타데이터 라우트
-├── middlewares/         # 미들웨어
-│   └── authMiddleware.js           # JWT 토큰 검증
-├── utils/               # 유틸리티 함수
-│   ├── logger.js                   # Winston 로거 설정
-│   ├── validation.js               # 입력값 검증
-│   ├── formatUtil.js               # 데이터 포맷팅
-│   ├── tokenUtil.js                # 토큰 생성 및 검증
-│   └── requestLock.js              # 동시 요청 방지
-├── logs/                # 로그 파일 (자동 생성)
-├── .env                 # 환경 변수
-├── app.js               # Express 앱 초기화 및 설정
-├── package.json         # 프로젝트 의존성
-└── nodemon.json         # Nodemon 설정
+src/
+├── config/
+│   ├── env.js                       # 환경 변수 로드 및 검증
+│   ├── db.js                        # PostgreSQL Pool 연결
+│   └── initDb.js                    # 서버 시작 시 테이블 자동 생성
+├── controllers/
+│   ├── aiController.js              # 파일 업로드 → 요약 / 문제 생성
+│   ├── authController.js            # 토큰 갱신, 로그아웃
+│   ├── userController.js            # 회원가입, 로그인, 아이디 중복 확인
+│   ├── summaryController.js         # 요약본 CRUD
+│   ├── questionController.js        # 문제 CRUD
+│   ├── favoriteController.js        # 즐겨찾기 폴더 · 문제 관리
+│   └── problemSummaryMetaController.js  # 문제·요약 메타데이터 조회
+├── models/
+│   ├── userModel.js
+│   ├── tokenModel.js
+│   ├── summaryModel.js
+│   ├── questionModel.js
+│   └── favoriteModel.js
+├── routes/
+│   ├── aiRoutes.js
+│   ├── authRoutes.js
+│   ├── userRoutes.js
+│   ├── summaryRoutes.js
+│   ├── questionRoutes.js
+│   ├── favoriteRoutes.js
+│   └── problemSummaryMetaRoutes.js
+├── middlewares/
+│   ├── authMiddleware.js            # JWT 토큰 검증
+│   ├── rateLimiter.js               # 엔드포인트별 Rate Limit 설정
+│   └── errorHandler.js             # 전역 에러 핸들러
+├── utils/
+│   ├── openaiService.js             # ChatGPT 호출, PDF/PPTX 텍스트 추출
+│   ├── promptManager.js             # 프롬프트 조합 관리
+│   ├── tokenUtil.js                 # JWT 생성·검증·쿠키 설정
+│   ├── tokenModel.js                # 토큰 DB 저장
+│   ├── educationConfig.js           # 학습 수준 · 전공 분야 설정
+│   ├── validation.js                # 입력값 형식 · 보안 검증
+│   ├── formatUtil.js                # 데이터 포맷팅
+│   ├── requestLock.js               # 동시 중복 요청 방지
+│   └── logger.js                    # Winston 로거
+└── app.js                           # Express 앱 초기화
 ```
 
-## API 엔드포인트
+---
+
+## 📚 API 엔드포인트
+
+### AI 생성
+| 메서드 | 엔드포인트 | 설명 |
+|--------|-----------|------|
+| POST | `/api/ai/summarize` | 파일(PDF·PPTX) 업로드 후 요약 생성 |
+| POST | `/api/ai/generate` | 요약 텍스트 기반 문제 생성 |
 
 ### 인증 (Authentication)
-- `POST /api/users/register` - 회원가입
-- `POST /api/users/login` - 로그인
-- `POST /api/users/check-userid` - 아이디 중복 확인
-- `POST /api/auth/refresh-token` - 토큰 갱신
-- `POST /api/auth/logout` - 로그아웃
-- `GET /api/auth/verify` - 토큰 검증
+| 메서드 | 엔드포인트 | 설명 |
+|--------|-----------|------|
+| POST | `/api/users/register` | 회원가입 |
+| POST | `/api/users/login` | 로그인 |
+| POST | `/api/users/check-userid` | 아이디 중복 확인 |
+| POST | `/api/auth/refresh-token` | 액세스 토큰 갱신 |
+| POST | `/api/auth/logout` | 로그아웃 |
+| GET | `/api/auth/verify` | 토큰 검증 |
 
 ### 요약본 (Summaries)
-- `POST /api/summaries` - 요약본 저장
-- `GET /api/summaries/user/:userId` - 사용자별 요약본 목록 조회
-- `GET /api/summaries/:id` - 요약본 상세 조회
-- `PATCH /api/summaries/:id/name` - 요약본 이름 변경 (인증 필요)
-- `DELETE /api/summaries/:id` - 요약본 삭제 (인증 필요)
+| 메서드 | 엔드포인트 | 설명 |
+|--------|-----------|------|
+| POST | `/api/summaries` | 요약본 저장 |
+| GET | `/api/summaries/user/:userId` | 사용자별 요약본 목록 조회 |
+| GET | `/api/summaries/search/:userId` | 요약본 검색 |
+| GET | `/api/summaries/user/:userId/meta` | 요약본 메타데이터 조회 |
+| GET | `/api/summaries/:id` | 요약본 상세 조회 |
+| PATCH | `/api/summaries/:id/name` | 요약본 이름 변경 (인증 필요) |
+| DELETE | `/api/summaries/:id` | 요약본 삭제 (인증 필요) |
 
 ### 문제 (Questions)
-- `POST /api/questions` - 문제 저장
-- `GET /api/questions/user/:userId` - 사용자별 문제 목록 조회
-- `GET /api/questions/:id` - 문제 상세 조회
-- `PATCH /api/questions/:id/name` - 문제 이름 변경 (인증 필요)
-- `DELETE /api/questions/:id` - 문제 삭제 (인증 필요)
+| 메서드 | 엔드포인트 | 설명 |
+|--------|-----------|------|
+| POST | `/api/questions` | 문제 저장 |
+| GET | `/api/questions/user/:userId` | 사용자별 문제 목록 조회 |
+| GET | `/api/questions/search/:userId` | 문제 검색 |
+| GET | `/api/questions/:id` | 문제 상세 조회 |
+| PATCH | `/api/questions/:id/name` | 문제 이름 변경 (인증 필요) |
+| DELETE | `/api/questions/:id` | 문제 삭제 (인증 필요) |
 
 ### 즐겨찾기 (Favorites)
-#### 폴더 관리
-- `GET /api/favorites/folders/:userId` - 사용자의 모든 폴더 조회
-- `POST /api/favorites/folders` - 새 폴더 생성
-- `GET /api/favorites/folders/default/:userId` - 기본 폴더 조회/생성
-- `DELETE /api/favorites/folders/:folderId` - 폴더 삭제
-
-#### 문제 관리
-- `POST /api/favorites/questions` - 즐겨찾기에 문제 추가
-- `DELETE /api/favorites/questions/:favoriteId` - 즐겨찾기에서 문제 제거
-- `GET /api/favorites/check/:userId/:questionId` - 특정 문제 즐겨찾기 확인
-- `POST /api/favorites/check-multiple/:userId` - 여러 문제 즐겨찾기 상태 확인
-- `GET /api/favorites/questions/all/:userId` - 사용자의 모든 즐겨찾기 문제 조회
-- `GET /api/favorites/folders/:folderId/questions/:userId` - 폴더별 문제 조회
+| 메서드 | 엔드포인트 | 설명 |
+|--------|-----------|------|
+| GET | `/api/favorites/folders/:userId` | 사용자 폴더 목록 조회 |
+| POST | `/api/favorites/folders` | 새 폴더 생성 |
+| POST | `/api/favorites/folders/ensure-default` | 기본 폴더 보장 |
+| GET | `/api/favorites/folders/default/:userId` | 기본 폴더 조회/생성 |
+| DELETE | `/api/favorites/folders/:folderId` | 폴더 삭제 |
+| POST | `/api/favorites/questions` | 즐겨찾기에 문제 추가 |
+| DELETE | `/api/favorites/questions/:favoriteId` | 즐겨찾기에서 문제 제거 |
+| GET | `/api/favorites/check/:userId/:questionId` | 특정 문제 즐겨찾기 확인 |
+| POST | `/api/favorites/check-multiple/:userId` | 여러 문제 즐겨찾기 상태 확인 |
+| GET | `/api/favorites/questions/all/:userId` | 모든 즐겨찾기 문제 조회 |
+| GET | `/api/favorites/folders/:folderId/questions/:userId` | 폴더별 문제 조회 |
 
 ### 메타데이터 (Metadata)
-- `GET /api/problem-summary-meta` - 모든 문제 메타데이터 조회
-- `GET /api/problem-summary-meta/:id` - 특정 문제 메타데이터 조회
+| 메서드 | 엔드포인트 | 설명 |
+|--------|-----------|------|
+| GET | `/api/problem-summary-meta` | 전체 메타데이터 조회 |
+| GET | `/api/problem-summary-meta/:id` | 특정 메타데이터 조회 |
 
-## 데이터베이스 구조
+---
 
-### users (사용자)
+## 🗄️ 데이터베이스 구조
+
+> 서버 최초 실행 시 테이블이 자동으로 생성됩니다.
+
+### users
 ```sql
-userindex      SERIAL PRIMARY KEY
-userid         VARCHAR(30) UNIQUE NOT NULL
-password       TEXT NOT NULL
-name           VARCHAR(50) NOT NULL
-age            INT NOT NULL
-gender         TEXT CHECK (gender IN ('male', 'female', 'other'))
-phone          VARCHAR(15) UNIQUE NOT NULL
-email          VARCHAR(100) UNIQUE
-created_at     TIMESTAMP DEFAULT NOW()
-updated_at     TIMESTAMP DEFAULT NOW()
+userindex   SERIAL PRIMARY KEY
+userid      VARCHAR(20)  UNIQUE NOT NULL
+password    VARCHAR(255) NOT NULL
+name        VARCHAR(50)  NOT NULL
+age         SMALLINT     NOT NULL  CHECK (age BETWEEN 1 AND 150)
+gender      VARCHAR(10)  NOT NULL  CHECK (gender IN ('male', 'female'))
+phone       VARCHAR(20)  UNIQUE NOT NULL
+email       VARCHAR(100) UNIQUE
+created_at  TIMESTAMPTZ  DEFAULT NOW()
 ```
 
-### refresh_token (리프레시 토큰)
+### refresh_token
 ```sql
-id             SERIAL PRIMARY KEY
-user_id        INT NOT NULL REFERENCES users(userindex)
-token          TEXT NOT NULL
-expires_at     TIMESTAMP NOT NULL
-created_at     TIMESTAMP DEFAULT NOW()
+id          SERIAL PRIMARY KEY
+user_id     INTEGER      NOT NULL  REFERENCES users(userindex) ON DELETE CASCADE
+token       VARCHAR(255) NOT NULL
+expires_at  TIMESTAMPTZ  NOT NULL
+created_at  TIMESTAMPTZ  DEFAULT NOW()
 ```
 
-### user_summaries (요약)
+### user_summaries
+```sql
+selection_id  SERIAL PRIMARY KEY
+user_id       INTEGER           NOT NULL  REFERENCES users(userindex) ON DELETE CASCADE
+file_name     VARCHAR(255)      NOT NULL
+summary_name  VARCHAR(255)      NOT NULL  DEFAULT 'Untitled Summary'
+summary_type  summary_type_enum NOT NULL  -- basic | key_points | topic | outline | keywords
+summary_text  TEXT              NOT NULL
+created_at    TIMESTAMPTZ       DEFAULT NOW()
+```
+
+### user_questions
 ```sql
 selection_id   SERIAL PRIMARY KEY
-user_id        INT NOT NULL REFERENCES users(userindex)
-file_name      TEXT NOT NULL
-summary_name   TEXT NOT NULL DEFAULT 'Untitled Summary'
-summary_type   type TEXT CHECK (summary_type IN ('basic', 'key_points', 'topic', 'outline', 'keywords'))
-summary_text   TEXT NOT NULL
-created_at     TIMESTAMP DEFAULT NOW()
+user_id        INTEGER              NOT NULL  REFERENCES users(userindex) ON DELETE CASCADE
+file_name      VARCHAR(255)         NOT NULL
+question_name  VARCHAR(255)         NOT NULL  DEFAULT 'Untitled Question'
+question_type  question_type_enum   NOT NULL  -- multiple_choice | sequence | fill_in_the_blank | true_false | short_answer | descriptive
+question_data  JSONB                NOT NULL  DEFAULT '{}'
+created_at     TIMESTAMPTZ          DEFAULT NOW()
 ```
 
-### user_questions (문제)
+### favorite_folders
 ```sql
-selection_id   SERIAL PRIMARY KEY
-user_id        INT NOT NULL REFERENCES users(userindex)
-file_name      TEXT NOT NULL
-question_name  TEXT NOT NULL DEFAULT 'Untitled Question'
-question_type  TEXT CHECK (question_type IN ('multiple_choice', 'sequence', 'true_false', 'fill_in_the_blank', 'short_answer', 'descriptive'))
-question_data  JSONB NOT NULL
-created_at     TIMESTAMP DEFAULT NOW()
+folder_id    SERIAL PRIMARY KEY
+user_id      INTEGER      NOT NULL  REFERENCES users(userindex) ON DELETE CASCADE
+folder_name  VARCHAR(100) NOT NULL
+description  VARCHAR(255)
+created_at   TIMESTAMPTZ  DEFAULT NOW()
+UNIQUE (user_id, folder_name)
 ```
 
-### favorite_folders (즐겨찾기 폴더)
+### favorite_questions
 ```sql
-folder_id      SERIAL PRIMARY KEY
-user_id        INT NOT NULL REFERENCES users(userindex) ON DELETE CASCADE
-folder_name    TEXT NOT NULL
-description    TEXT
-created_at     TIMESTAMP DEFAULT NOW()
-updated_at     TIMESTAMP DEFAULT NOW()
+favorite_id     SERIAL PRIMARY KEY
+user_id         INTEGER   NOT NULL  REFERENCES users(userindex)         ON DELETE CASCADE
+folder_id       INTEGER   NOT NULL  REFERENCES favorite_folders(folder_id) ON DELETE CASCADE
+question_id     INTEGER   NOT NULL  REFERENCES user_questions(selection_id) ON DELETE CASCADE
+question_index  SMALLINT  NOT NULL  DEFAULT 0
+created_at      TIMESTAMPTZ         DEFAULT NOW()
+UNIQUE (user_id, question_id, question_index)
 ```
 
-### favorite_questions (즐겨찾기 문제)
-```sql
-favorite_id    SERIAL PRIMARY KEY
-user_id        INT NOT NULL REFERENCES users(userindex) ON DELETE CASCADE
-folder_id      INT REFERENCES favorite_folders(folder_id) ON DELETE CASCADE
-question_id    INT NOT NULL REFERENCES user_questions(selection_id) ON DELETE CASCADE
-question_index INT NOT NULL DEFAULT 0
-created_at     TIMESTAMP DEFAULT NOW()
-UNIQUE(user_id, folder_id, question_id, question_index)
+---
+
+## ⚙️ 환경 변수 설정
+
+`.env.example`을 복사하여 `.env` 파일을 생성합니다.
+
+```bash
+cp .env.example .env
 ```
 
-## 환경 변수 설정
+| 환경변수 | 필수 | 설명 |
+|---------|------|------|
+| `DATABASE_URL` | ✅ | Supabase PostgreSQL 연결 URL |
+| `ACCESS_TOKEN_SECRET` | ✅ | JWT 액세스 토큰 비밀키 (32자 이상) |
+| `REFRESH_TOKEN_SECRET` | ✅ | JWT 리프레시 토큰 비밀키 (32자 이상) |
+| `ACCESS_TOKEN_EXPIRES_IN` | | 액세스 토큰 만료 시간 (기본값: `1h`) |
+| `REFRESH_TOKEN_EXPIRES_IN` | | 리프레시 토큰 만료 시간 (기본값: `7d`) |
+| `OPENAI_API_KEY` | ✅ | OpenAI API 키 |
+| `OPENAI_MODEL` | | 사용할 모델 (기본값: `gpt-4o-mini`) |
+| `OPENAI_MAX_TOKENS` | | 최대 토큰 수 (기본값: `8000`) |
+| `NODE_ENV` | | 실행 환경 (기본값: `development`) |
+| `PORT` | | 서버 포트 (기본값: `3000`) |
+| `BACKEND_URL` | | 백엔드 서버 URL |
+| `FRONTEND_URL` | | CORS 허용 프론트엔드 URL (콤마로 복수 설정 가능) |
+| `ALLOW_ALL_ORIGINS` | | 모든 도메인 허용 여부 — 운영 환경에서는 반드시 `false` |
+| `TEST_USERID` | | 포맷 검사 생략 테스트 계정 ID |
 
-`.env` 파일을 생성하고 다음 내용을 설정하세요:
+---
 
-```env
-# Supabase 설정
-SUPABASE_URL=Supabase_URL을_입력하세요
-SUPABASE_KEY=Supabase_anon_key를_입력하세요
-
-# JWT 토큰 설정
-ACCESS_TOKEN_SECRET=Access_Token_비밀키를_입력하세요
-REFRESH_TOKEN_SECRET=Refresh_Token_비밀키를_입력하세요
-
-# 토큰 유효기간
-ACCESS_TOKEN_EXPIRY=1h
-REFRESH_TOKEN_EXPIRY=7d
-
-# 환경 설정 (개발 환경이면 development, 운영 환경이면 production)
-NODE_ENV=development
-
-# 백엔드 서버가 실행될 포트 번호
-PORT=3000
-
-# API URL 설정 (개발 환경 기준)
-BACKEND_URL=http://localhost:3000
-FRONTEND_URL=http://localhost:5173
-
-# CORS 설정 (모든 도메인을 허용하려면 true, 특정 도메인만 허용하려면 false)
-ALLOW_ALL_ORIGINS=false
-```
-
-## 설치 및 실행
+## 🚀 설치 및 실행
 
 ### 1. 저장소 클론
 ```bash
@@ -237,12 +258,12 @@ npm install
 ```
 
 ### 3. 환경 변수 설정
-`.env` 파일을 생성하고 위의 환경 변수를 설정합니다.
+```bash
+cp .env.example .env
+# .env 파일을 열어 각 값 입력
+```
 
-### 4. Supabase 데이터베이스 설정
-Supabase 프로젝트를 생성하고 위의 데이터베이스 구조에 맞게 테이블을 생성합니다.
-
-### 5. 서버 실행
+### 4. 서버 실행
 
 **개발 모드**
 ```bash
@@ -254,32 +275,41 @@ npm run dev
 npm start
 ```
 
+서버 실행 시 DB 연결을 확인하고 필요한 테이블을 자동으로 생성합니다.
+
+---
+
 ## 📊 로깅
 
-로그 파일은 `logs/` 디렉토리에 자동으로 생성됩니다:
-- `error.log` - 에러 레벨 로그
-- `combined.log` - 모든 레벨의 로그
+로그 파일은 `logs/` 디렉토리에 자동으로 생성됩니다.
 
-## 🔒 보안 기능
+| 파일 | 내용 |
+|------|------|
+| `error.log` | ERROR 레벨 로그 |
+| `combined.log` | 전체 레벨 로그 |
 
-- **SQL Injection 방어**: 입력값 검증 및 Supabase Prepared Statements 사용
-- **비밀번호 보안**: bcrypt를 사용한 해싱
-- **JWT 인증**: Access Token + Refresh Token
-- **Rate Limiting**: 회원가입 API에 15분당 5회 제한
-- **CORS 설정**: 허용된 도메인만 접근 가능
-- **입력값 검증**: 아이디, 비밀번호, 이메일 등 형식 검증
+---
 
-## 개발
-본 프로젝트는 **Claude Sonnet 3.7** AI를 활용하여 코드 리뷰, 리팩토링, 문서화 작업을 수행했습니다.
+## 🔒 보안
+
+- **SQL Injection 방어**: 입력값 검증 및 pg Parameterized Query 사용
+- **비밀번호 보안**: bcrypt 해싱
+- **JWT 인증**: Access Token + Refresh Token (HttpOnly Cookie)
+- **Rate Limiting**: 엔드포인트별 요청 횟수 제한
+  - 회원가입 · 로그인: 15분당 5회
+  - AI 생성: 30분당 10회
+  - 저장: 10분당 10회
+  - 토큰 갱신: 15분당 30회
+  - 일반 API: 15분당 120회
+- **CORS**: 허용된 도메인만 접근 가능
+- **helmet**: 보안 HTTP 헤더 설정
+
+---
 
 ## 저장소
-본 프로젝트는 3개의 저장소로 구성되어 있습니다:
 
-- **백엔드 (Node.js)** - 현재 저장소
-  - 사용자 인증, 데이터 관리, API 서버
-  
-- **프론트엔드 (React)** 
-  - https://github.com/HeoSeonJin0504/qurekafront.git
-  
-- **AI 서버 (FastAPI)** - ChatGPT API 관련 기능
-  - https://github.com/hanataba227/qureka-fastapi.git
+본 프로젝트는 3개의 저장소로 구성되어 있습니다.
+
+- **백엔드 (Node.js)** — 현재 저장소
+- **프론트엔드 (React)** — https://github.com/HeoSeonJin0504/qurekafront.git
+- **AI 서버 (FastAPI)** — https://github.com/hanataba227/qureka-fastapi.git
