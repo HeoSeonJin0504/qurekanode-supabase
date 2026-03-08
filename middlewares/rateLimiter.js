@@ -1,4 +1,10 @@
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
+
+/**
+ * [공통 IP 키 생성기]
+ * express-rate-limit v7에서 ipKeyGenerator가 제거됨에 따라 req.ip를 직접 반환하는 함수로 대체
+ */
+const ipKeyGenerator = (req) => req.ip;
 
 /**
  * [공통 에러 응답 핸들러]
@@ -20,7 +26,7 @@ export const registerLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator, // 최신 보안 권장 사항 적용
+  keyGenerator: ipKeyGenerator,
   handler: makeHandler('회원가입 시도 횟수가 초과되었습니다. 15분 후 다시 시도해주세요.'),
 });
 

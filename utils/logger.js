@@ -22,11 +22,10 @@ const logger = winston.createLogger({
   ],
 });
 
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(winston.format.colorize(), logFormat),
-  }));
-}
+// production 포함 항상 콘솔 출력
+logger.add(new winston.transports.Console({
+  format: winston.format.combine(winston.format.colorize(), logFormat),
+}));
 
 logger.transaction = (message, meta = {}) => logger.log('info', message, { transaction: true, ...meta });
 

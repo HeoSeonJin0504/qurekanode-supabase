@@ -2,9 +2,9 @@ import "dotenv/config";
 
 // 필수 환경 변수 검증
 const required = [
-  "QUREKA_DATABASE_URL",
-  "QUREKA_ACCESS_TOKEN_SECRET",
-  "QUREKA_REFRESH_TOKEN_SECRET",
+  "DATABASE_URL",
+  "ACCESS_TOKEN_SECRET",
+  "REFRESH_TOKEN_SECRET",
   "OPENAI_API_KEY",
 ];
 
@@ -15,8 +15,8 @@ if (missing.length > 0) {
 }
 
 // JWT secret 최소 길이 경고
-['QUREKA_ACCESS_TOKEN_SECRET', 'QUREKA_REFRESH_TOKEN_SECRET'].forEach((key) => {
-  if (process.env[key] && process.env[key].length < 32) {   // ← undefined 체크 추가
+['ACCESS_TOKEN_SECRET', 'REFRESH_TOKEN_SECRET'].forEach((key) => {
+  if (process.env[key] && process.env[key].length < 32) {
     console.warn(`[CONFIG] 경고: ${key}는 32자 이상을 권장합니다.`);
   }
 });
@@ -25,15 +25,15 @@ if (missing.length > 0) {
 const config = {
   // DB
   db: {
-    url: process.env.QUREKA_DATABASE_URL,
+    url: process.env.DATABASE_URL,
   },
 
   // JWT
   jwt: {
-    accessSecret: process.env.QUREKA_ACCESS_TOKEN_SECRET,
-    refreshSecret: process.env.QUREKA_REFRESH_TOKEN_SECRET,
-    accessExpiresIn: process.env.QUREKA_ACCESS_TOKEN_EXPIRES_IN || "1h",
-    refreshExpiresIn: process.env.QUREKA_REFRESH_TOKEN_EXPIRES_IN || "7d",
+    accessSecret: process.env.ACCESS_TOKEN_SECRET,
+    refreshSecret: process.env.REFRESH_TOKEN_SECRET,
+    accessExpiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || "1h",
+    refreshExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || "7d",
   },
 
   // OpenAI
@@ -49,12 +49,13 @@ const config = {
     nodeEnv: process.env.NODE_ENV || "development",
     isProduction: process.env.NODE_ENV === "production",
     backendUrl: process.env.BACKEND_URL || "http://localhost:3000",
-    testUserId: process.env.TEST_USERID || null, // 테스트 계정 ID
+    testUserId: process.env.TEST_USERID || null,
   },
 
   // CORS
   cors: {
-    allowedOrigins: (process.env.CORS_ORIGINS || "")
+    // 복수 도메인은 콤마로 구분: https://a.com,https://b.com
+    allowedOrigins: (process.env.FRONTEND_URL || "")
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean),

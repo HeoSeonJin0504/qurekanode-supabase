@@ -60,76 +60,59 @@ const userController = {
 
       // 2. 보안 검증 (SQL Injection 및 유해 문자 방지)
       if (!isSafeUserid(userid) || !isSafePassword(password)) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "아이디 또는 비밀번호에 허용되지 않는 문자가 있습니다.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "아이디 또는 비밀번호에 허용되지 않는 문자가 있습니다.",
+        });
       }
       if (
         !isSafeSqlInput(name) ||
         !isSafeSqlInput(phone) ||
         (email && !isSafeSqlInput(email))
       ) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "입력값에 보안 위협이 되는 문자가 포함되어 있습니다.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "입력값에 보안 위협이 되는 문자가 포함되어 있습니다.",
+        });
       }
 
       // 3. 형식 검증 (비즈니스 로직 적용)
       if (!isValidUserid(userid))
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message:
-              "아이디 형식이 올바르지 않습니다. (5-20자 영문 소문자/숫자)",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "아이디 형식이 올바르지 않습니다. (5-20자 영문 소문자/숫자)",
+        });
       if (!isValidName(name))
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "이름은 2-50자의 한글 또는 영문이어야 합니다.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "이름은 2-50자의 한글 또는 영문이어야 합니다.",
+        });
       if (!isValidAge(age))
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "나이는 1-150 사이의 숫자여야 합니다.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "나이는 1-150 사이의 숫자여야 합니다.",
+        });
       if (!isValidGender(gender))
         return res
           .status(400)
           .json({ success: false, message: "성별을 올바르게 선택해주세요." });
       if (!isValidPhone(phone))
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "전화번호 형식이 올바르지 않습니다.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "전화번호 형식이 올바르지 않습니다.",
+        });
       if (email && !isValidEmail(email))
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "이메일 형식이 올바르지 않습니다.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "이메일 형식이 올바르지 않습니다.",
+        });
 
       // 4. 중복 가입 방지 락(Lock) 획득
       if (!registrationLock.acquire(userid)) {
-        return res
-          .status(429)
-          .json({
-            success: false,
-            message: "이미 처리 중인 요청입니다. 잠시 후 다시 시도해주세요.",
-          });
+        return res.status(429).json({
+          success: false,
+          message: "이미 처리 중인 요청입니다. 잠시 후 다시 시도해주세요.",
+        });
       }
 
       // 5. 아이디 중복 최종 확인
@@ -158,13 +141,11 @@ const userController = {
       }
 
       registrationLock.release(userid);
-      return res
-        .status(201)
-        .json({
-          success: true,
-          message: "회원가입이 완료되었습니다.",
-          user: { userid: newUser.userid, name: newUser.name },
-        });
+      return res.status(201).json({
+        success: true,
+        message: "회원가입이 완료되었습니다.",
+        user: { userid: newUser.userid, name: newUser.name },
+      });
     } catch (error) {
       registrationLock.release(userid);
       logger.error("회원가입 오류:", error);
@@ -188,41 +169,36 @@ const userController = {
     try {
       const { userid, password, rememberMe = false } = req.body;
       if (!userid || !password)
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "아이디와 비밀번호를 모두 입력해주세요.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "아이디와 비밀번호를 모두 입력해주세요.",
+        });
       // SQL 인젝션 방지 검사 (포맷 검사는 제외 - 테스트 계정 허용)
       if (!isSafeUserid(userid))
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "입력값에 허용되지 않는 문자가 포함되어 있습니다.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "입력값에 허용되지 않는 문자가 포함되어 있습니다.",
+        });
       // TEST_USERID 환경변수에 등록된 계정은 포맷 검사 생략
       if (userid !== config.server.testUserId && !isValidUserid(userid))
         return res
           .status(400)
-          .json({ success: false, message: "아이디 형식이 올바르지 않습니다." });
+          .json({
+            success: false,
+            message: "아이디 형식이 올바르지 않습니다.",
+          });
 
       const user = await User.authenticate(userid, password);
       if (!user)
-        return res
-          .status(401)
-          .json({
-            success: false,
-            message: "아이디 또는 비밀번호가 일치하지 않습니다.",
-          });
+        return res.status(401).json({
+          success: false,
+          message: "아이디 또는 비밀번호가 일치하지 않습니다.",
+        });
       if (user.userindex == null)
-        return res
-          .status(500)
-          .json({
-            success: false,
-            message: "사용자 ID 정보가 올바르지 않습니다.",
-          });
+        return res.status(500).json({
+          success: false,
+          message: "사용자 ID 정보가 올바르지 않습니다.",
+        });
 
       const userInfo = {
         id: user.userindex,
@@ -238,30 +214,27 @@ const userController = {
         setTokenCookies(res, accessToken, refreshToken, rememberMe);
       } catch (tokenError) {
         logger.error("리프레시 토큰 저장 실패:", tokenError);
-        return res
-          .status(500)
-          .json({
-            success: false,
-            message: "로그인은 성공했으나 토큰 저장 중 오류가 발생했습니다.",
-          });
+        return res.status(500).json({
+          success: false,
+          message: "로그인은 성공했으나 토큰 저장 중 오류가 발생했습니다.",
+        });
       }
 
       logger.transaction("사용자 로그인", { userid: user.userid, rememberMe });
-      return res
-        .status(200)
-        .json({
-          success: true,
-          message: "로그인 성공",
-          user: {
-            id: user.userindex,
-            userid: user.userid,
-            name: user.name,
-            email: user.email,
-          },
-          tokens: { accessToken, refreshToken },
-          rememberMe,
-        });
+      return res.status(200).json({
+        success: true,
+        message: "로그인 성공",
+        user: {
+          id: user.userindex,
+          userid: user.userid,
+          name: user.name,
+          email: user.email,
+        },
+        tokens: { accessToken, refreshToken },
+        rememberMe,
+      });
     } catch (error) {
+      console.error("로그인 오류 상세:", error); // ← 추가
       logger.error("로그인 오류:", error);
       return res
         .status(500)

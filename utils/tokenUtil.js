@@ -2,16 +2,12 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import logger from './logger.js';
 import Token from '../models/tokenModel.js';
-
-const ACCESS_TOKEN_SECRET     = process.env.ACCESS_TOKEN_SECRET;
-const REFRESH_TOKEN_SECRET    = process.env.REFRESH_TOKEN_SECRET;
-const ACCESS_TOKEN_EXPIRES_IN = process.env.ACCESS_TOKEN_EXPIRES_IN  || '1h';
-const REFRESH_TOKEN_EXPIRES_IN= process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
+import config from '../config/env.js'; // dotenv 로드 보장 + 검증 완료된 값 사용
 
 // JWT 액세스 토큰 생성
 export const generateAccessToken = (payload) => {
   try {
-    return jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+    return jwt.sign(payload, config.jwt.accessSecret, { expiresIn: config.jwt.accessExpiresIn });
   } catch (error) {
     logger.error('액세스 토큰 생성 오류: ' + error.message);
     throw new Error('Failed to generate access token');
@@ -21,7 +17,7 @@ export const generateAccessToken = (payload) => {
 // JWT 리프레시 토큰 생성
 export const generateRefreshToken = (payload) => {
   try {
-    return jwt.sign(payload, REFRESH_TOKEN_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES_IN });
+    return jwt.sign(payload, config.jwt.refreshSecret, { expiresIn: config.jwt.refreshExpiresIn });
   } catch (error) {
     logger.error('리프레시 토큰 생성 오류: ' + error.message);
     throw new Error('Failed to generate refresh token');
@@ -43,7 +39,7 @@ export const saveRefreshToken = async (userId, refreshToken) => {
 // 리프레시 토큰 서명 검증 및 DB 유효성 확인
 export const verifyRefreshToken = async (refreshToken) => {
   try {
-    const decoded     = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+    const decoded     = jwt.verify(refreshToken, config.jwt.refreshSecret);
     const tokenRecord = await Token.findRefreshToken(refreshToken);
     if (!tokenRecord) return null;
     if (new Date() > new Date(tokenRecord.expires_at)) {
@@ -68,7 +64,7 @@ export const extractToken = (req, tokenType) => {
 
 // 액세스·리프레시 토큰을 HttpOnly 쿠키로 설정
 export const setTokenCookies = (res, accessToken, refreshToken, rememberMe = false) => {
-  const isProduction  = process.env.NODE_ENV === 'production';
+  const isProduction  = config.server.isProduction;
   const refreshMaxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
   const base = { httpOnly: true, secure: isProduction, sameSite: isProduction ? 'none' : 'lax', path: '/' };
 
