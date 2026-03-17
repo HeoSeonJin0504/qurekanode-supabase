@@ -1,7 +1,13 @@
 import User from '../models/userModel.js';
 import Token from '../models/tokenModel.js';
+import jwt from 'jsonwebtoken';
 import { generateAccessToken, verifyRefreshToken, extractToken } from '../utils/tokenUtil.js';
 import logger from '../utils/logger.js';
+
+const getIp = (req) => {
+  const raw = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip;
+  return raw?.replace(/^::ffff:/, '') || raw;
+};
 
 const authController = {
   // 리프레시 토큰으로 새 액세스 토큰 발급
@@ -38,9 +44,17 @@ const authController = {
   async logout(req, res) {
     try {
       const refreshToken = extractToken(req, 'refreshToken');
-      const userId   = req.user?.id;
-      const username = req.user?.userid || '알 수 없음';
 
+      // refreshToken에서 사용자 정보 직접 디코딩 (req.user 없는 경우 대비)
+      let username = '알 수 없음';
+      if (refreshToken) {
+        try {
+          const decoded = jwt.decode(refreshToken);
+          username = decoded?.userid || '알 수 없음';
+        } catch (_) {}
+      }
+
+      const userId = req.user?.id;
       if (refreshToken) {
         await Token.deleteRefreshTokenByToken(refreshToken);
       } else if (userId) {
@@ -53,7 +67,8 @@ const authController = {
       res.clearCookie('refreshToken', cookieOptions);
       res.clearCookie('rememberMe',   { ...cookieOptions, httpOnly: false });
 
-      logger.info(`로그아웃 성공 - 사용자: ${username}`);
+      const ip = getIp(req);
+      logger.info(`[qureka] 로그아웃 성공 - 사용자: ${username}, IP: ${ip}`);
       return res.status(200).json({ success: true, message: '로그아웃 되었습니다.' });
     } catch (error) {
       logger.error('로그아웃 오류:', error);

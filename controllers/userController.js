@@ -21,6 +21,11 @@ import {
   isSafeSqlInput,
 } from "../utils/validation.js";
 
+const getIp = (req) => {
+  const raw = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip;
+  return raw?.replace(/^::ffff:/, '') || raw;
+};
+
 const userController = {
   // 아이디 중복 여부 확인
   async checkUserid(req, res) {
@@ -166,6 +171,8 @@ const userController = {
 
   // 아이디·비밀번호 인증 및 JWT 토큰 발급
   async login(req, res) {
+    //const ip = req.headers["x-forwarded-for"]?.split(",")[0].trim() || req.ip;
+    const ip = getIp(req);  // ← 추가
     try {
       const { userid, password, rememberMe = false } = req.body;
       if (!userid || !password)
@@ -181,19 +188,21 @@ const userController = {
         });
       // TEST_USERID 환경변수에 등록된 계정은 포맷 검사 생략
       if (userid !== config.server.testUserId && !isValidUserid(userid))
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "아이디 형식이 올바르지 않습니다.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "아이디 형식이 올바르지 않습니다.",
+        });
 
       const user = await User.authenticate(userid, password);
-      if (!user)
-        return res.status(401).json({
-          success: false,
-          message: "아이디 또는 비밀번호가 일치하지 않습니다.",
-        });
+      if (!user) {
+        logger.warn(`[qureka] 로그인 실패 - 아이디: ${userid}, IP: ${ip}`);
+        return res
+          .status(401)
+          .json({
+            success: false,
+            message: "아이디 또는 비밀번호가 일치하지 않습니다.",
+          });
+      }
       if (user.userindex == null)
         return res.status(500).json({
           success: false,
@@ -220,7 +229,7 @@ const userController = {
         });
       }
 
-      logger.transaction("사용자 로그인", { userid: user.userid, rememberMe });
+      logger.info(`[qureka] 로그인 성공 - 사용자: ${user.userid}, IP: ${ip}`);
       return res.status(200).json({
         success: true,
         message: "로그인 성공",
@@ -234,8 +243,7 @@ const userController = {
         rememberMe,
       });
     } catch (error) {
-      console.error("로그인 오류 상세:", error); // ← 추가
-      logger.error("로그인 오류:", error);
+      logger.error(`[qureka] 로그인 오류 - IP: ${ip}`, error);  // ← ip 추가
       return res
         .status(500)
         .json({ success: false, message: "서버 오류가 발생했습니다." });

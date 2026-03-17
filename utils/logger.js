@@ -8,9 +8,13 @@ if (!fs.existsSync(logDir)) fs.mkdirSync(logDir);
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
-  winston.format.printf((info) =>
-    `${info.timestamp} [${info.level.toUpperCase()}]: ${info.message}${info.stack ? '\n' + info.stack : ''}`
-  )
+  winston.format.printf((info) => {
+    const { timestamp, level, message, stack, transaction, ...meta } = info;
+    const metaStr = Object.keys(meta).length
+      ? ' ' + JSON.stringify(meta)
+      : '';
+    return `${timestamp} [${level.toUpperCase()}]: ${message}${metaStr}${stack ? '\n' + stack : ''}`;
+  })
 );
 
 const logger = winston.createLogger({
@@ -22,7 +26,6 @@ const logger = winston.createLogger({
   ],
 });
 
-// production 포함 항상 콘솔 출력
 logger.add(new winston.transports.Console({
   format: winston.format.combine(winston.format.colorize(), logFormat),
 }));
