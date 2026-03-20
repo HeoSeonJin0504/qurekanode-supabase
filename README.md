@@ -308,8 +308,14 @@ npm start
 
 ## 저장소
 
-본 프로젝트는 3개의 저장소로 구성되어 있습니다.
+본 프로젝트는 4개의 저장소로 구성되어 있습니다.
 
 - **백엔드 (Node.js)** — 현재 저장소
 - **프론트엔드 (React)** — https://github.com/HeoSeonJin0504/qurekafront.git
+- **백엔드 (Spring Boot)** — https://github.com/HeoSeonJin0504/qurekaspring-supabase.git
 - **AI 서버 (FastAPI)** — https://github.com/hanataba227/qureka-fastapi.git
+
+> **백엔드는 Spring Boot 또는 Node.js 중 하나만 선택하여 사용하면 됩니다.**  
+> 두 서버는 동일한 기능을 제공하며 프론트엔드와 독립적으로 연동됩니다.  
+> FastAPI 서버는 OpenAI API 호출 및 프롬프트 처리 전용으로 구현되어 있으며,  
+> 현재 Spring Boot / Node.js 백엔드에 해당 기능(FastAPI)이 통합되어 있어 **별도 실행 없이도 동작합니다.**
