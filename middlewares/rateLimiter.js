@@ -1,10 +1,12 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 /**
- * [공통 IP 키 생성기]
- * express-rate-limit v7에서 ipKeyGenerator가 제거됨에 따라 req.ip를 직접 반환하는 함수로 대체
+ * [IP 키 생성기]
+ * - trust proxy 1 설정으로 req.ip에 실제 클라이언트 IP가 담김
+ * - ipKeyGenerator: IPv6 주소를 /56 서브넷으로 정규화하여 같은 네트워크를 동일하게 처리
+ *   (v8부터 ip 문자열을 직접 받는 함수로 변경됨 → req.ip를 명시적으로 전달)
  */
-const ipKeyGenerator = (req) => req.ip;
+const keyGenerator = (req) => ipKeyGenerator(req.ip ?? req.socket.remoteAddress ?? 'unknown');
 
 /**
  * [공통 에러 응답 핸들러]
@@ -26,7 +28,7 @@ export const registerLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator,
+  keyGenerator: keyGenerator, // 최신 보안 권장 사항 적용
   handler: makeHandler('회원가입 시도 횟수가 초과되었습니다. 15분 후 다시 시도해주세요.'),
 });
 
@@ -39,7 +41,7 @@ export const loginLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator,
+  keyGenerator: keyGenerator,
   handler: makeHandler('로그인 시도 횟수가 초과되었습니다. 15분 후 다시 시도해주세요.'),
 });
 
@@ -52,7 +54,7 @@ export const aiGenerationLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator,
+  keyGenerator: keyGenerator,
   handler: makeHandler('AI 생성 요청 횟수가 초과되었습니다. 1시간 후 다시 시도해주세요.'),
 });
 
@@ -65,7 +67,7 @@ export const saveLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator,
+  keyGenerator: keyGenerator,
   handler: makeHandler('저장 요청 횟수가 초과되었습니다. 잠시 후 다시 시도해주세요.'),
 });
 
@@ -78,8 +80,21 @@ export const generalLimiter = rateLimit({
   max: 120,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator,
+  keyGenerator: keyGenerator,
   handler: makeHandler('요청 횟수가 초과되었습니다. 잠시 후 다시 시도해주세요.'),
+});
+
+/**
+ * [데모 리미터 (데모 요약 / 문제 생성)]
+ * AI 생성 리미터와 동일 조건: 30분당 최대 10회
+ */
+export const demoLimiter = rateLimit({
+  windowMs: 30 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: keyGenerator,
+  handler: makeHandler('데모 요청 횟수가 초과되었습니다. 30분 후 다시 시도해주세요.'),
 });
 
 /**
@@ -91,6 +106,6 @@ export const tokenRefreshLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKeyGenerator,
+  keyGenerator: keyGenerator,
   handler: makeHandler('토큰 갱신 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.'),
 });

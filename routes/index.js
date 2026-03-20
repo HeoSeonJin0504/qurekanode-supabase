@@ -6,6 +6,7 @@ import summaryRoutes from './summaryRoutes.js';
 import questionRoutes from './questionRoutes.js';
 import favoriteRoutes from './favoriteRoutes.js';
 import problemSummaryMetaRoutes from './problemSummaryMetaRoutes.js';
+import demoRoutes from './demoRoutes.js';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/summaries', summaryRoutes);
 router.use('/questions', questionRoutes);
 router.use('/favorites', favoriteRoutes);
 router.use('/problem-summary-meta', problemSummaryMetaRoutes);
+router.use('/demo', demoRoutes);
 
 export default router;

@@ -12,13 +12,7 @@ import logger from './utils/logger.js';
 import { generalLimiter } from './middlewares/rateLimiter.js';
 import { notFoundHandler, globalErrorHandler } from './middlewares/errorHandler.js';
 
-import userRoutes               from './routes/userRoutes.js';
-import authRoutes               from './routes/authRoutes.js';
-import summaryRoutes            from './routes/summaryRoutes.js';
-import questionRoutes           from './routes/questionRoutes.js';
-import favoriteRoutes           from './routes/favoriteRoutes.js';
-import problemSummaryMetaRoutes from './routes/problemSummaryMetaRoutes.js';
-import aiRoutes                 from './routes/aiRoutes.js';
+import apiRouter from './routes/index.js';
 
 const app = express();
 
@@ -74,17 +68,7 @@ app.get('/health', async (_req, res) => {
 });
 
 // API 라우트
-const routes = [
-  { path: '/users',                router: userRoutes },
-  { path: '/auth',                 router: authRoutes },
-  { path: '/summaries',            router: summaryRoutes },
-  { path: '/questions',            router: questionRoutes },
-  { path: '/favorites',            router: favoriteRoutes },
-  { path: '/problem-summary-meta', router: problemSummaryMetaRoutes },
-  { path: '/ai',                   router: aiRoutes },
-];
-
-routes.forEach(({ path, router }) => app.use(`/api${path}`, router));
+app.use('/api', apiRouter);
 
 // 에러 핸들러
 app.use(notFoundHandler);
